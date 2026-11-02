@@ -142,8 +142,9 @@ class DryAdapter:
             text = '<tool_call>{"name":"get_balance","arguments":{}}</tool_call>'
         elif "向用户播报" in prompt:                              # 工具结果总结
             text = "[MOCK] 您的默认账户余额为 5,234.10 元。"
-        elif "资料" in prompt:                                   # faq.j2
-            text = "[MOCK] 手机银行行内转账手续费为 0 元（占位示例，以行内公示为准）。"
+        elif "资料" in prompt:                                   # faq.j2（F1：JSON 输出）
+            text = ('{"answer":"[MOCK] 手机银行行内转账手续费为 0 元'
+                    '（占位示例，以行内公示为准）。","cited":["I1"]}')
         else:                                                    # 其他（smoke 等）
             text = "[MOCK] OK"
         return text, t

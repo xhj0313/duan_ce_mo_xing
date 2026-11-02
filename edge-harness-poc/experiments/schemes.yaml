@@ -73,6 +73,27 @@ schemes:
     expected: {intent.macro_f1: "+4~6pt"}
     cost: 低（改模板 + 一轮评测）
     risk: prompt 变长 → 端侧首 token 延迟上升；示例过多会挤占上下文
+    status: iterating
+    note: >
+      四版对照（评测-12~15）：最佳 macro-F1 0.843(+3.9pt) 但 OOS 掉到 0.692；
+      OOS 最好的版本 0.962 但 macro-F1 0.796；中间两版分别 0.810/0.615、0.820/0.500。
+      **结论：prompt 层 few-shot 已进噪声区**（OOS 仅 26 条样本，单条 3.85pt；
+      各版 macro-F1 差 0.796~0.843 仅相当于 3-4 条样本）。继续调 prompt 收益递减，
+      根因需靠 I1（taxonomy 边界）+ I5（规则 OOS 层）或 X2（4B）。仓库保留定稿版（评测-15）。
+
+  - id: I5
+    title: 规则前置 OOS 判定（确定性层）
+    target: [intent.oos_reject]
+    why: 四版 prompt 对照证明模型自报的 OOS 判定极不稳定（0.50~0.96），域外类型集中在少数可枚举模式
+    change:
+      - classify 之后加规则层：命中第三方 App 名（微信/支付宝/淘宝/抖音…）、
+        App 故障词（闪退/卡死/字太小/难用）、非银行地点（加油站/地铁/医院…）、
+        领导个人联系方式（行长电话）→ 强制 out_of_scope
+      - 命中安全常识词（验证码/诈骗/密码/陌生电话）→ 强制 security_tips，避免被规则误推 OOS
+    hypothesis: 把 OOS 边界从模型判断降级为规则+模型双保险，可同时保住 F1 与 OOS
+    expected: {intent.oos_reject: "0.85+", intent.macro_f1: "保持 0.81+"}
+    cost: 低（规则表 + 单测）
+    risk: 规则与当前测试集重合度高，存在过拟合风险 → 需在 W2 扩充冻结集上复验
     status: proposed
 
   - id: I1

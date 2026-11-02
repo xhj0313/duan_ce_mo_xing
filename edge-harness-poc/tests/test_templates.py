@@ -49,8 +49,12 @@ def test_tool_template_contains_all_tools():
 def test_faq_template_renders_card():
     card = (REG / "kb" / "fee_consult.md").read_text(encoding="utf-8")
     out = env().get_template("faq.j2").render(knowledge_card=card, question="手续费")
-    assert "[I1]" in out and "用户问题：手续费" in out
-    assert "资料没有覆盖" in out          # 拒答规则必须在场
+    assert "[I1]" in out                  # 知识卡信息点进入 prompt
+    assert "手续费" in out                # 用户问题在场
+    assert "转人工客服" in out            # 拒答规则必须在场
+    # F1 契约：结构化输出 + 禁复读 + 引用要求
+    assert '"answer"' in out and '"cited"' in out
+    assert "禁止复述" in out
 
 
 def test_mask_template_has_rules():

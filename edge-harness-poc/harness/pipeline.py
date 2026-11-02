@@ -145,7 +145,9 @@ class Harness:
                 knowledge_card=card, question=text)
             raw, t = self.adapter.generate(prompt)
             trace.append({"step": "faq#gen", "wall_ms": (t.t_return - t.t_submit) * 1000})
-            return RouteResult(action="faq", reply=raw.strip(), trace=trace, **base)
+            reply, cited = parse_faq_output(raw)
+            trace.append({"step": "faq#parse", "detail": f"cited={cited}"})
+            return RouteResult(action="faq", reply=reply, trace=trace, **base)
         if route == "tool":
             return self._route_tool(reg, text, base, trace, raw_text=user_text)
         return RouteResult(action="cloud_fallback", fallback_reason="unknown_route",
@@ -365,6 +367,18 @@ class Harness:
         return RouteResult(action="cloud_fallback", tool_calls=calls,
                            fallback_reason="tool_failed_twice",
                            reply=CLOUD_FALLBACK_REPLY, trace=trace, **{**base, "slots": slots})
+
+
+def parse_faq_output(raw: str) -> tuple[str, list]:
+    """F1：解析 FAQ 的结构化输出 {"answer","cited"}；容错回退纯文本并清掉复读痕迹。"""
+    obj = extract_json(raw)
+    if isinstance(obj, dict):
+        ans = obj.get("answer")
+        if isinstance(ans, str) and ans.strip():
+            cited = [str(c) for c in (obj.get("cited") or []) if isinstance(c, (str, int))]
+            return ans.strip(), cited
+    txt = re.sub(r"^\s*(用户输入|用户问题|问题|资料)[:：].*?\n+", "", raw).strip()
+    return txt, []
 
 
 def extract_json(raw: str) -> dict | None:
