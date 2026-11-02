@@ -136,7 +136,9 @@ class DryAdapter:
         elif "意图清单" in prompt:                               # intent.j2
             text = next((out for keys, out in self._INTENT_RULES
                          if any(k in ut for k in keys)), self._INTENT_DEFAULT)
-        elif "<tool>" in prompt:                                 # tool_call.j2
+        elif "工具参数提取器" in prompt:                          # tool_call_direct.j2（T1）
+            text = "{}"
+        elif "<tool>" in prompt:                                 # tool_call.j2（旧逻辑/兜底）
             text = '<tool_call>{"name":"get_balance","arguments":{}}</tool_call>'
         elif "向用户播报" in prompt:                              # 工具结果总结
             text = "[MOCK] 您的默认账户余额为 5,234.10 元。"

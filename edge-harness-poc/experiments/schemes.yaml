@@ -1,0 +1,286 @@
+# ============================================================
+# 优化方案登记簿（single source of truth）
+# ============================================================
+# 每条方案一次实验为主；status 流转：proposed → iterating → adopted / rejected
+# 改动位置写具体文件，便于 git diff 复核；expected 为预期增益（pt），非承诺
+# ============================================================
+
+baseline:
+  - id: baseline-pc
+    label: PC 基线（Qwen3-1.7B Q8_0 / llama.cpp b11669 CPU）
+    runs:
+      intent: 20261023_094120_qwen3-1.7b_intent_mid_openai
+      faq: 20261023_094521_qwen3-1.7b_faq_mid_openai
+      tool: 20261023_095326_qwen3-1.7b_tool_mid_openai
+      mask: 20261023_100600_qwen3-1.7b_mask_mid_openai
+  - id: baseline-device
+    label: 真机基线（一加 Ace 2 / Termux llama.cpp / 局域网直连）
+    runs:
+      intent: 20261023_144520_qwen3-1.7b_intent_mid_openai
+      faq: 20261023_145307_qwen3-1.7b_faq_mid_openai
+      tool: 20261023_150853_qwen3-1.7b_tool_mid_openai
+      mask: 20261023_151239_qwen3-1.7b_mask_mid_openai
+
+schemes:
+
+  # ---------- 测量口径 ----------
+  - id: F0
+    title: 判分器口径 v1（同义词归一 + 信息点引用校验）
+    target: [faq.info_hit]
+    why: v0 启发式要求信息点关键 token 字面出现；"0 元"→"免费"这类同义改判 miss，0.44 含假低
+    change:
+      - eval/judges/faq_judge.py 增加同义词/口径归一表（免费≈0元、免收、不收费…）
+      - 增加 cite 校验分支（若回复给出 [I1] 引用则直接命中）
+      - report.json 增加 judge_version 字段
+    hypothesis: 真实命中率高于 0.44，v0 低估了模型 grounding 能力
+    expected: {faq.info_hit: "+10~15pt（测量变化，非改进）"}
+    cost: 低（离线重判，无需重跑模型）
+    risk: 放宽过度会掩盖真实问题 → 必须同时保留 v0 数字，两版并列登记
+    status: adopted
+    note: >
+      v1（同义归一+引用）与 v0 完全一致（0.442/0.462，引用命中 0）——原假设"一半是口径假低"被证伪；
+      v2（+数字边界校验+长短语模糊匹配）收紧后 PC 0.442→0.471、真机 0.462→0.500，真实低估约 3-4pt。
+      结论：0.44 主要是真实缺口（半数 miss 为转人工/转云=路由失败，半数为自有知识作答），
+      判分口径不是主要矛盾。v2 已成为默认口径（JUDGE_VERSION=v2），v0 数字备份于 report_v0.json。
+
+  # ---------- 意图 ----------
+  - id: I4
+    title: OOS/置信度离线校准
+    target: [intent.oos_reject, intent.false_reject]
+    why: 阈值 CONF_MIN=0.5 为拍定值；raw.jsonl 已含每行 confidence，可离线扫阈值
+    change:
+      - 离线脚本扫 CONF_MIN ∈ [0.3..0.9]，画 OOS 拒识率 vs 误拒率曲线
+      - 可选：对高精度关键词（汇率/R2/挂失）加规则前置判 OOS
+    hypothesis: 现阈值非最优点；调阈值可把拒识 0.77 拉到 0.85+ 且误拒不超 0.08
+    expected: {intent.oos_reject: "+5~10pt"}
+    cost: 极低（纯离线，不重跑）
+    risk: 数据集 OOS 样本仅 26 条，阈值对样本敏感 → 结论标注置信区间
+    status: rejected
+    note: >
+      实测否决：176 条样本的置信度只有 0.9(144)/0.95(32) 两个取值（真机 0.9×137/0.95×31），
+      阈值 0.30–0.90 区间内路由结果完全不变，0.95 则误拒 99% 崩溃——**自报置信度无区分度**。
+      后续替代（I4b，待登记）：① 规则前置判 OOS（关键词/句式）；② 二次确认（让模型只做
+      "是否属银行业务"二分类）；③ 模型升级（4B）。扫描表见 experiments/artifacts/I4_threshold_sweep_*.md
+
+  - id: I3
+    title: 对抗 few-shot（用真实错误做对照例）
+    target: [intent.macro_f1]
+    why: 35 个错误集中在 6 组相邻类；模板里只有每组 1 个容易示例
+    change:
+      - harness/prompts/intent.j2 增加 6~8 组"易混对"对照示例（正例+反例成对给）
+      - 示例直接取自基线错误样本（rate_consult vs calc_deposit_interest 等）
+    hypothesis: 相邻类混淆是小模型"没被明确告知边界"，成对示例比文字规则更有效
+    expected: {intent.macro_f1: "+4~6pt"}
+    cost: 低（改模板 + 一轮评测）
+    risk: prompt 变长 → 端侧首 token 延迟上升；示例过多会挤占上下文
+    status: proposed
+
+  - id: I1
+    title: 注册表边界修复（相邻类重划）
+    target: [intent.macro_f1, intent.min_class_recall]
+    why: rate_consult(0.33)/card_apply(0.50)/statement_consult(0.57) 三类 desc 与相邻类语义重叠
+    change:
+      - registry/intents.yaml：为易混对补 desc 差异句与"不包含"说明
+      - 明确 guide/execute 成对类的判定口径（是否含"帮我"不代表要执行）
+    hypothesis: 类别定义本身含糊时，任何模型都无法稳定区分
+    expected: {intent.macro_f1: "+2~4pt（叠加 I3 后）"}
+    cost: 中（需按行内功能树确认，涉及业务口径）
+    risk: 改 id 会破坏测试集标签 → 只改 desc/examples，不动 id
+    status: proposed
+    note: 与 I3 分开跑，先 I3 后 I1，便于归因
+
+  - id: I2
+    title: 两阶段分级分类（先 route 后细分）
+    target: [intent.macro_f1]
+    why: 6 组混淆对中 4 组是跨 route 组（faq↔tool/cloud），先把 30 类压成 3 路可消除
+    change:
+      - 新增 classify_stage1.j2：只判 faq/tool/cloud/oos（4 选 1）
+      - stage2 只在组内细分（15/6/9 选 1）
+    hypothesis: 跨组混淆清零；组内混淆由 I1/I3 解决
+    expected: {intent.macro_f1: "+5pt"}
+    cost: 高（生成轮数 ×2，端侧延迟翻倍）
+    risk: 两段误差累积；端侧速度不可接受 → 需与速度预算一起评估
+    status: proposed
+    note: 仅在 I1+I3 之后仍不达 0.85 时才启动
+
+  # ---------- FAQ ----------
+  - id: F1
+    title: FAQ 模板加固（禁复读 + 引用制 JSON）
+    target: [faq.info_hit, faq.refuse_rate]
+    why: 基线中模型复读 prompt（"用户输入：…"）、绕过知识卡用自有知识作答
+    change:
+      - faq.j2 顶部加硬约束：禁止输出提示词内容/禁止复述问题
+      - '输出改为 {"answer": "...", "cited": ["I1","I2"]}，渲染层取 answer'
+      - 给 1 个正例（结论→条件→引用）
+    hypothesis: 强制引用信息点编号可把"自有知识作答"扭回"资料作答"
+    expected: {faq.info_hit: "+15~20pt"}
+    cost: 低（模板 + pipeline 解析）
+    risk: JSON 包裹增加输出 token → 延迟；解析失败需兜底
+    status: proposed
+
+  - id: F2
+    title: 知识卡标准答句 + 确定性短路
+    target: [faq.info_hit]
+    why: 银行场景准确性优先；知识卡已含"回答口径"，可直出标准答句
+    change:
+      - registry/kb/*.md 每卡增加"标准答句"段
+      - pipeline：高频/事实型问题命中卡片 → 直接返回标准答句（不经模型）
+    hypothesis: 确定性路径把卡片覆盖问题的命中率推到 ~1.0，模型只负责改写/组合
+    expected: {faq.info_hit: "+30pt（仅覆盖卡片内问题）"}
+    cost: 中（要写 15 份标准答句 + 命中判定）
+    risk: 牺牲自然语言多样性；命中判定误判会答非所问
+    status: proposed
+
+  # ---------- 工具 ----------
+  - id: T1
+    title: intent→tool 直给工具名（取消模型选择工具）
+    target: [tool.A]
+    why: 基线 A 类 0.1~0.2，失败样本 action=tool 但 calls=[]，模型根本没输出 <tool_call>；
+       而注册表里 intent→tool 是一一映射，工具名本不需要模型决定
+    change:
+      - pipeline._route_tool：把该 intent 对应工具（含 schema）直接注入 prompt
+      - tool_call.j2 改为"必须调用 {tool_name}，只输出参数 JSON"
+      - 代码侧校验参数 JSON 合法后再执行（不合法走一次纠错）
+    hypothesis: 把"选择工具+格式化调用"降级为"填参数"，1.7B 可胜任
+    expected: {tool.A: "+40~60pt"}
+    cost: 低（pipeline + 模板）
+    risk: 单一 intent 多工具时需回退原逻辑；参数错误率可能上升（B 类会有反馈）
+    status: adopted
+    note: >
+      实测（评测-07，PC）：A 0.20→1.00（+80pt，工具调用彻底打通）；但单独上线时 B 0.875→0.0
+      （模型对缺参用例编造参数）、C 1.00→0.57（查他人账户/外泄请求被真实执行）。
+      **重要发现：基线的 C=100% 是"模型不会用工具"造成的虚高，安全层缺失被掩盖。**
+      已由 T1b（修 B）与 T5（修 C）补齐，三者组合后（评测-10）A 1.0 / B 0.875 / C 1.0，
+      三阈值全过 → 组合采纳。
+
+  - id: T1b
+    title: 参数合法性校验（修复缺参追问）
+    target: [tool.B]
+    why: T1 后模型会为缺参用例编造参数（city="附近"、amount 凭空给出），必填检查被绕过
+    change:
+      - tools.yaml 为每个工具增加 arg_rules（枚举/数值范围/值须在用户原话中出现）
+      - pipeline 在 execute 前校验：不合法 → 视作缺参，用注册表 ask 话术追问
+    hypothesis: 参数"有值但非法"占 B 类失败主体，值级校验可把追问行为拉回
+    expected: {tool.B: "+60~80pt"}
+    cost: 中（规则设计 + 单测）
+    risk: 规则过严会误追问（把合法参数判非法）→ 需按 A 类回归
+    status: adopted
+    note: >
+      评测-09（首版）：B 0→0.875、C 保持 1.0，但 A 掉到 0.9——中文数字未解析（"十万"被误判编造）；
+      评测-10（补十万/三万五等中文数字解析）：A 1.0 / B 0.875 / C 1.0，三阈值全过。
+      规则：city 须在原话且非停用词；amount 须能在原话数字中还原；term 须为枚举且在原话。
+
+  - id: T5
+    title: 主体与外泄安全策略（调用前 policy 校验）
+    target: [tool.C]
+    why: T1 证明"工具能调"与"调用安全"是两件事——现有白名单只管工具名，不管参数语义与主体
+    change:
+      - pipeline 在 execute 前增加 policy 层：① 原话含他人指代（别人/他人/我妈/我爸/张三…）
+        或脱敏后出现 [姓名_x] 且工具为账户类 → 不执行；② 含外泄动作（截图/发送到/邮件/转发）
+        → 转云；③ account 参数不得为姓名/卡号占位符
+      - 拒绝动作记审计字段（fallback_reason=policy_block:<rule>）
+    hypothesis: C 类失败本质是缺"主体校验"，规则层可 100% 兜住已知注入模式
+    expected: {tool.C: "回到 1.00"}
+    cost: 中（策略表 + 单测 + 与 mask 的边界）
+    risk: 规则易被绕过（改写话术）；需注明这是演示级策略，生产要做账户主体鉴权
+    status: adopted
+    note: >
+      评测-08：C 0.571→1.00，A 保持 1.00 无回归。规则：外泄动作（截图/发送/邮件/转发…）全局拦截；
+      他人主体（别人/我妈/张三/[姓名_x]）仅对个人数据类工具拦截；参数含占位符一律拒绝；
+      拒绝时记 fallback_reason=policy_block:* 供审计。
+
+  - id: T2
+    title: tool few-shot 调用示例
+    target: [tool.A]
+    why: 模板只有格式说明没有完整示例
+    change: tool_call.j2 增加 2 个示例（含"金额带万"归一化示例）
+    hypothesis: 示例比规则更能教会格式
+    expected: {tool.A: "+10pt（与 T1 叠加需分开验证）"}
+    cost: 低
+    risk: 与 T1 同时上线会互相掩盖 → 先 T1 后 T2
+    status: proposed
+
+  # ---------- 脱敏 ----------
+  - id: M1
+    title: 实体-only 输出 + 代码侧替换
+    target: [mask.precision, mask.recall]
+    why: 现在模型同时生成"替换后文本+实体表"，文本改错/实体与文本不一致会污染判定
+    change:
+      - mask.j2 只要求输出 entities（type/original）
+      - pipeline 用代码做字符串替换生成 masked_text
+    hypothesis: 模型专注实体识别，precision 提升；替换确定性化后文本零错误
+    expected: {mask.precision: "+3~5pt"}
+    cost: 中（改模板 + 替换逻辑 + 单测）
+    risk: 同名实体多处出现需按出现顺序替换；重叠实体需处理
+    status: proposed
+
+  - id: M3
+    title: 无 PII 反例 few-shot
+    target: [mask.precision]
+    why: 19 行"本无 PII 却被脱敏"（订单号/金额被误判）
+    change: mask.j2 增加 2 个反例（含订单号、金额、验证码三位数）
+    hypothesis: 反例直接压制过度脱敏
+    expected: {mask.no_pii_but_masked_rows: "19 → <8"}
+    cost: 低
+    risk: 反例过多会压低 recall（漏脱），需看 R 变化
+    status: proposed
+
+  - id: M2
+    title: 正则预筛 + Luhn 校验
+    target: [mask.precision, mask.recall]
+    why: 手机号/身份证/银行卡格式规律强，正则精度高于模型
+    change:
+      - 代码层正则抓 PHONE/ID_CARD/BANK_CARD（卡号过 Luhn）
+      - 模型只处理 NAME/ADDR
+    hypothesis: 高置信度类型走规则，模型负担减轻，两端指标同升
+    expected: {mask.precision: "+5pt", mask.recall: "+1~3pt"}
+    cost: 中（规则维护 + 冲突处理）
+    risk: 正则漏掉非常规格式（带空格/分隔符）→ 需与模型结果合并去重
+    status: proposed
+
+  # ---------- 架构 / 模型 ----------
+  - id: T3
+    title: 语法约束解码（GBNF / json_schema）
+    target: [tool.A, intent.macro_f1]
+    why: llama.cpp 支持 grammar 约束输出；可强制 JSON/<tool_call> 结构
+    change: OpenAIAdapter 增加 response_format=json_schema（llama.cpp 侧 grammar）
+    hypothesis: 消除格式类失败，但不解决语义判断错误
+    expected: {tool.A: "+10pt（结构类失败清零）"}
+    cost: 中（需验证 MNN 是否支持，MNN 不支持则只在 PC/对照链路可用）
+    risk: Qwen3 思考模式与 grammar 同开会失效（README 已知坑）
+    status: proposed
+    note: 能力验证类方案，先小样本验证再全量
+
+  - id: T4
+    title: Qwen3 原生 tool-calling（--jinja + tools）
+    target: [tool.A]
+    why: Qwen3 训练时见过 Hermes 风格工具调用；自制 <tool_call> 文本格式与训练分布不一致
+    change: OpenAIAdapter 传 tools 参数；llama-server 开 --jinja；解析原生 tool_calls 字段
+    hypothesis: 用模型原生格式，比自制模板更稳
+    expected: {tool.A: "+20~30pt"}
+    cost: 中（适配器 + 解析 + MNN 不可用的降级策略）
+    risk: 端侧 MNN 链路不支持 → 仅作 PC/对照结论
+    status: proposed
+
+  - id: X1
+    title: 量化对照（Q4_K_M vs Q8_0）
+    target: [速度]
+    why: 端侧速度是硬约束；Q8_0 是 ModelScope 唯一档，Q4_K_M 需另找源
+    change: 同模板下跑 Q4_K_M，对比指标与延迟
+    hypothesis: 1.7B 上 Q4 质量损失 <2pt，速度提升 1.5~2×
+    expected: {速度: "+50~100%", 质量: "-0~2pt"}
+    cost: 低（换模型文件 + 一轮评测）
+    risk: 量化名不同源质量参差 → 固定来源与版本
+    status: proposed
+
+  - id: X2
+    title: 4B-2507 模型对比
+    target: [all]
+    why: tool 调用与 FAQ grounding 的缺口大概率是模型容量问题，harness 优化有天花板
+    change: 换 Qwen3-4B-Instruct-2507（非思考版，避免与约束输出冲突）
+    hypothesis: tool A 0.7+、FAQ 命中 0.6+，代价是端侧延迟 ×2~3
+    expected: {all: "显著", 速度: "-50~70%"}
+    cost: 高（模型下载/转换 + 端侧内存与温度测试）
+    risk: 16GB 设备内存够（约 2.6GB），但发热降频会影响长跑
+    status: proposed
+    note: 与 I1/I3/F1/T1 并行推进，作为"另一条腿"而非替代

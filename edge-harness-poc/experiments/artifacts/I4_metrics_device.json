@@ -1,0 +1,16 @@
+{
+  "recommend": "no-viable",
+  "threshold": 0.5,
+  "metrics": {
+    "intent.accuracy": 0.8155,
+    "intent.macro_f1": 0.8178,
+    "intent.oos_reject": 0.7692,
+    "intent.false_reject": 0.0634
+  },
+  "verdict_hint": "reject",
+  "confidence_distinct_values": 2,
+  "confidence_dist": {
+    "0.9": 137,
+    "0.95": 31
+  }
+}

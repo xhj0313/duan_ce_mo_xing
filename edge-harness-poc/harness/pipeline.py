@@ -28,6 +28,19 @@ MAX_JSON_RETRY = 1      # JSON 解析失败重试上限（硬性，防端侧死�
 CLOUD_FALLBACK_REPLY = "这个问题我需要帮您转接在线客服，请稍候。"
 RETRY_PROMPT_SUFFIX = "你上次的输出不符合格式：{err}。请重新输出，只输出一个 JSON 对象。"
 
+# ---- T5：主体与外泄安全策略（代码层，不依赖模型自觉）----
+OTHER_PERSON_PAT = re.compile(r"别人|他人|我妈|我爸|我朋友|我同事|家里人|老婆|老公|孩子|儿子|女儿|张三|李四")
+EXFIL_PAT = re.compile(r"截图|截屏|拍照|发送到|发到|邮件|邮箱|转发|导出|打印")
+PLACEHOLDER_PAT = re.compile(r"\[(?:姓名|卡号|证件|手机)_\d+\]|(?:姓名|卡号|证件|手机)_\d+")
+PERSONAL_DATA_TOOLS = {"get_balance", "get_recent_transactions",
+                       "get_deposit_holding", "get_quota"}
+
+# ---- T1b：参数值级校验（不合法视作缺参 → 走注册表追问）----
+CITY_STOP = {"附近", "周边", "这里", "那儿", "本地", "外地", "未知", "未提供", "最近", "哪个"}
+TERM_ENUM = {"三个月", "半年", "一年", "两年", "三年", "五年"}
+CN_DIGITS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
+             "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+
 
 @dataclass
 class RouteResult:
@@ -134,11 +147,185 @@ class Harness:
             trace.append({"step": "faq#gen", "wall_ms": (t.t_return - t.t_submit) * 1000})
             return RouteResult(action="faq", reply=raw.strip(), trace=trace, **base)
         if route == "tool":
-            return self._route_tool(reg, text, base, trace)
+            return self._route_tool(reg, text, base, trace, raw_text=user_text)
         return RouteResult(action="cloud_fallback", fallback_reason="unknown_route",
                            reply=CLOUD_FALLBACK_REPLY, trace=trace, **base)
 
-    def _route_tool(self, reg, text, base, trace):
+    @staticmethod
+    def policy_violation(tool_name: str, args: dict, masked_text: str, raw_text: str) -> str | None:
+        """T5：调用前的确定性安全校验。返回违规类型（用于审计），None 表示放行。
+
+        规则：
+        - 外泄动作（截图/发送到/邮件/转发…）：任何工具都不执行，直接转云
+        - 他人主体（别人/我妈/张三… 或脱敏后的 [姓名_x]）：仅限"读取本人数据"类工具
+          （get_balance / get_recent_transactions / get_deposit_holding / get_quota）
+        - 参数值含脱敏占位符（姓名_x / 卡号_x）：一律拒绝，防"用占位符查他人"
+        """
+        if EXFIL_PAT.search(raw_text):
+            return "exfil"
+        if tool_name in PERSONAL_DATA_TOOLS:
+            if OTHER_PERSON_PAT.search(raw_text) or re.search(r"\[姓名_\d+\]", masked_text):
+                return "other_person"
+        for v in (args or {}).values():
+            if isinstance(v, str) and PLACEHOLDER_PAT.search(v):
+                return "placeholder_arg"
+        return None
+
+    @staticmethod
+    def _cn_numeral(s: str) -> float | None:
+        """解析中文数字：十万→100000，三万五→35000，五千→5000，十五→15。"""
+        total = 0.0
+        section = 0.0
+        num = 0
+        units = {"十": 10, "百": 100, "千": 1000}
+        for ch in s:
+            if ch in CN_DIGITS:
+                num = CN_DIGITS[ch]
+            elif ch in units:
+                section += (num or 1) * units[ch]
+                num = 0
+            elif ch == "万":
+                total += (section + num) * 10000
+                section, num = 0, 0
+            else:
+                return None
+        if total > 0 and num > 0 and "万" in s:      # 口语"三万五"=35000
+            return total + num * 1000
+        return total + section + num
+
+    @staticmethod
+    def _number_tokens(text: str) -> list[float]:
+        """从原话抽取数字并换算单位（5万→50000，3千→3000，十万→100000）。"""
+        out = []
+        for m in re.finditer(r"(\d+(?:\.\d+)?)\s*(万|千|w|k)?", text):
+            v = float(m.group(1))
+            unit = m.group(2)
+            if unit in ("万", "w"):
+                v *= 10000
+            elif unit in ("千", "k"):
+                v *= 1000
+            out.append(v)
+        for m in re.finditer(r"[零一二两三四五六七八九十百千万]+", text):
+            v = Harness._cn_numeral(m.group(0))
+            if v:
+                out.append(float(v))
+        return out
+
+    @classmethod
+    def invalid_args(cls, tool: dict, args: dict, raw_text: str) -> list[str]:
+        """T1b：参数值级校验（值必须能在用户原话中找到依据）。
+
+        返回非法参数名列表；调用方把这些键剔除后按"缺参"走注册表追问，
+        从而挡住模型编造（city="附近"、amount 凭空给出、term 臆测）。
+        """
+        bad = []
+        for name, rule in (tool.get("arg_rules") or {}).items():
+            if name not in args:
+                continue
+            v = args.get(name)
+            kind = (rule or {}).get("kind")
+            if kind == "city":
+                s = v.strip() if isinstance(v, str) else ""
+                if (not s or s in CITY_STOP or not (2 <= len(s) <= 6) or s not in raw_text):
+                    bad.append(name)
+            elif kind == "amount":
+                try:
+                    fv = float(v)
+                except (TypeError, ValueError):
+                    bad.append(name)
+                    continue
+                if fv <= 0 or not any(abs(fv - n) < 0.5 for n in cls._number_tokens(raw_text)):
+                    bad.append(name)
+            elif kind == "term":
+                if v not in TERM_ENUM or v not in raw_text:
+                    bad.append(name)
+        return bad
+
+    def _route_tool(self, reg, text, base, trace, raw_text: str = ""):
+        """T1：intent→tool 一一映射，工具名由注册表直给，模型只负责填参数。
+
+        基线（旧逻辑）让模型自行选择工具并输出 <tool_call>，1.7B 基本不吐该格式（A 类 0.1~0.2）。
+        改为"参数提取器"后：工具名、schema 由代码注入；模型只输出 arguments JSON；
+        必填槽缺失 → 用注册表话术追问；参数错误 → 回灌错误重试一次。
+        未映射/多工具时回退旧逻辑（_route_tool_legacy）。
+        """
+        tool_name = reg.get("tool")
+        matched = [t for t in self.tools_reg["tools"] if t["name"] == tool_name]
+        if len(matched) != 1:
+            return self._route_tool_legacy(reg, text, base, trace)
+        tool = matched[0]
+
+        schema_json = json.dumps({"name": tool["name"], "description": tool["description"],
+                                  "parameters": tool["parameters"]}, ensure_ascii=False)
+        prompt = self.env.get_template("tool_call_direct.j2").render(
+            tool=tool, schema_json=schema_json, text=text)
+        slots = dict(base["slots"])
+
+        args, attempt_prompt = None, prompt
+        for attempt in range(2):                       # 含一次 JSON 纠错
+            raw, t = self.adapter.generate(attempt_prompt)
+            trace.append({"step": f"tool#args{attempt}",
+                          "wall_ms": (t.t_return - t.t_submit) * 1000})
+            obj = extract_json(raw)
+            if isinstance(obj, dict):
+                args = obj
+                break
+            attempt_prompt = prompt + "\n\n" + RETRY_PROMPT_SUFFIX.format(
+                err="上一次输出不是合法 JSON 对象")
+
+        if args is None:
+            return RouteResult(action="cloud_fallback", fallback_reason="tool_args_json_failed",
+                               reply=CLOUD_FALLBACK_REPLY, trace=trace,
+                               **{**base, "slots": slots})
+
+        # T5：调用前安全校验（主体/外泄/占位符），命中即不执行并转云，记录审计原因
+        violated = self.policy_violation(tool_name, args, text, raw_text)
+        if violated:
+            return RouteResult(action="cloud_fallback",
+                               fallback_reason=f"policy_block:{violated}",
+                               reply=CLOUD_FALLBACK_REPLY, trace=trace,
+                               **{**base, "slots": slots})
+
+        # T1b：值级校验——不合法参数剔除后按缺参处理（挡住编造的城市/本金/期限）
+        for k in self.invalid_args(tool, args, raw_text):
+            args.pop(k, None)
+
+        # 必填槽缺失 → 追问（代码触发，话术来自注册表，不让模型自由发挥）
+        missing = [s for s in reg.get("slots", [])
+                   if s.get("required") and s["name"] not in args]
+        if missing:
+            return RouteResult(action="ask_slot", trace=trace, reply=missing[0]["ask"],
+                               **{**base, "slots": {**slots, **args}})
+
+        result = self.executor.execute(tool_name, args, call_count=0)
+        calls = [{"name": tool_name, "arguments": args, "result": result}]
+
+        if result.get("error"):                        # 参数错误 → 回灌错误重试一次
+            raw, t = self.adapter.generate(
+                prompt + f"\n\n上一次调用 {tool_name} 返回错误：{result['error']}。"
+                         f"请修正参数，只输出 JSON。")
+            trace.append({"step": "tool#argfix",
+                          "wall_ms": (t.t_return - t.t_submit) * 1000})
+            obj = extract_json(raw)
+            if isinstance(obj, dict):
+                args = obj
+                result = self.executor.execute(tool_name, args, call_count=1)
+                calls.append({"name": tool_name, "arguments": args, "result": result})
+
+        if result.get("error"):
+            return RouteResult(action="cloud_fallback", fallback_reason="tool_failed",
+                               tool_calls=calls, reply=CLOUD_FALLBACK_REPLY, trace=trace,
+                               **{**base, "slots": {**slots, **args}})
+
+        answer_prompt = (f"用一两句话向用户播报以下查询结果，数字要准确，"
+                         f"开头带[MOCK]标记：{json.dumps(result, ensure_ascii=False)}\n用户原话：{text}")
+        reply, t2 = self.adapter.generate(answer_prompt)
+        trace.append({"step": "tool#summarize", "wall_ms": (t2.t_return - t2.t_submit) * 1000})
+        return RouteResult(action="tool", reply=reply.strip(), tool_calls=calls,
+                           trace=trace, **{**base, "slots": {**slots, **args}})
+
+    def _route_tool_legacy(self, reg, text, base, trace):
+        """旧逻辑（模型自选工具 + <tool_call> 格式）。仅作未映射/多工具时的兜底。"""
         from harness.tools_mock import render_tool_args_json
         tools_json = [{"schema_json": json.dumps(
             {"name": t["name"], "description": t["description"],

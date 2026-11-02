@@ -46,6 +46,9 @@ tools:
         city: {type: string, description: 城市名}
       required: [city]
     stub: mock_find_branch
+    # T1b：值级校验（不合法视作缺参 → 走注册表 ask 追问，防模型编造）
+    arg_rules:
+      city: {kind: city}      # 须出现在用户原话中，且非"附近/未知"等非城市词
 
   - name: calc_interest
     description: 按本金与期限试算存款利息（mock，固定示例利率）
@@ -56,6 +59,9 @@ tools:
         term: {type: string, description: 期限，如 一年/三年}
       required: [amount, term]
     stub: mock_calc_interest
+    arg_rules:
+      amount: {kind: amount}   # 正数，且须能在用户原话的数字中还原（5万→50000）
+      term: {kind: term}       # 枚举，且须出现在用户原话中
 
 # 安全规则（代码强制，不依赖模型自觉）：
 # 1. 白名单 = 本文件注册的工具集合；模型输出任何白名单外的工具调用 → 拒绝并记录（对应对测试集 C 类注入 case）
