@@ -25,6 +25,13 @@ PROMPTS = ROOT / "harness" / "prompts"
 CONF_MIN = 0.5          # 低于此置信度 → 兜底转云（阈值先定标准再测）
 MAX_JSON_RETRY = 1      # JSON 解析失败重试上限（硬性，防端侧死循环）
 
+# ---- I5：规则前置 OOS / 安全常识判定（确定性层，弥补模型自报 OOS 不稳定）----
+OOS_APP = re.compile(r"微信(?!银行)|支付宝|淘宝|抖音|京东|美团|滴滴|拼多多")
+OOS_APPFAULT = re.compile(r"闪退|卡死|卡顿|字太小|看不清|太卡|崩溃|界面.{0,4}(难用|丑|乱)")
+OOS_PLACE = re.compile(r"加油站|地铁|公交|医院|超市|电影院|火车站|机场|快递")
+OOS_OTHER = re.compile(r"行长.{0,4}(电话|号码|办公室)|你是真人|你是谁")
+SEC_TIPS = re.compile(r"验证码|诈骗|骗子|陌生电话|钓鱼|密码.{0,4}(泄露|告诉|给别人)")
+
 CLOUD_FALLBACK_REPLY = "这个问题我需要帮您转接在线客服，请稍候。"
 RETRY_PROMPT_SUFFIX = "你上次的输出不符合格式：{err}。请重新输出，只输出一个 JSON 对象。"
 
@@ -94,10 +101,34 @@ class Harness:
                             entities=valid, trace=trace)
 
     # ---------- ② 意图分类 ----------
+    @staticmethod
+    def apply_intent_rules(text: str, obj: dict | None) -> dict | None:
+        """I5：模型输出后的确定性规则层。
+
+        - 验证码/诈骗等安全常识：模型若判 OOS 则纠回 security_tips（避免被 OOS 规则误杀）
+        - 第三方 App / App 故障抱怨 / 非银行地点 / 领导联系方式：强制 out_of_scope
+        返回新的 dict（带 rule 标记，便于审计与统计命中率）。
+        """
+        if not obj:
+            return obj
+        intent = str(obj.get("intent", ""))
+        conf = float(obj.get("confidence") or 0)
+        if SEC_TIPS.search(text) and intent == "out_of_scope":
+            return {**obj, "intent": "security_tips",
+                    "confidence": max(conf, 0.85), "rule": "sec_tips"}
+        if not SEC_TIPS.search(text) and (OOS_APP.search(text) or OOS_APPFAULT.search(text)
+                                          or OOS_PLACE.search(text) or OOS_OTHER.search(text)):
+            if intent != "out_of_scope":
+                return {**obj, "intent": "out_of_scope",
+                        "confidence": max(conf, 0.9), "rule": "oos_pattern"}
+        return obj
+
     def classify(self, text: str) -> tuple[dict, list]:
         tpl = self.env.get_template("intent.j2")
         prompt = tpl.render(intents=self.intents["intents"]) + "\n\n输入：" + text
-        return self._gen_json(prompt, "intent")
+        obj, trace = self._gen_json(prompt, "intent")
+        obj = self.apply_intent_rules(text, obj)          # I5：规则层
+        return obj, trace
 
     # ---------- ③ 路由状态机 ----------
     def route(self, user_text: str) -> RouteResult:

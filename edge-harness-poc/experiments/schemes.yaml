@@ -94,7 +94,13 @@ schemes:
     expected: {intent.oos_reject: "0.85+", intent.macro_f1: "保持 0.81+"}
     cost: 低（规则表 + 单测）
     risk: 规则与当前测试集重合度高，存在过拟合风险 → 需在 W2 扩充冻结集上复验
-    status: proposed
+    status: adopted
+    note: >
+      评测-16（PC）：acc 0.835→0.886，macro-F1 0.810→0.871（较基线 +6.7pt），
+      OOS 拒识 0.615→0.923（过 0.85 阈值），误拒 0.0067。规则层收益超出预期——
+      因为域外样本被错分时同时污染了 OOS 与目标类的 P/R，全部纠正后 macro-F1 连带上升。
+      联动（评测-17）：tool D 类 0.80→1.00（行长电话判 OOS），A/B/C 保持 1.0/0.875/1.0。
+      残留：rate_consult 0.33、card_apply 0.29（相邻类边界，须 I1）。
 
   - id: I1
     title: 注册表边界修复（相邻类重划）

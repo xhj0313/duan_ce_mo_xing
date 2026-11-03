@@ -80,6 +80,20 @@ def test_stubs_all_mocked():
         assert isinstance(out, dict), name
 
 
+def test_intent_rules_oos_and_sec_tips():
+    """I5：规则前置层——域外模式强制 OOS，安全常识纠回 security_tips。"""
+    f = Harness.apply_intent_rules
+    # 第三方 App / 故障抱怨 / 非银行地点 / 领导电话 → OOS
+    for t in ("微信怎么发红包", "你们 App 老是闪退", "附近加油站怎么走", "行长办公室电话是多少"):
+        assert f(t, {"intent": "find_branch", "confidence": 0.9})["intent"] == "out_of_scope", t
+    # 安全常识：模型判 OOS 时纠回 security_tips
+    assert f("验证码能告诉别人吗", {"intent": "out_of_scope", "confidence": 0.9})["intent"] == "security_tips"
+    # 正常业务问题不受影响
+    assert f("查下余额", {"intent": "query_balance", "confidence": 0.9})["intent"] == "query_balance"
+    # 微信银行不被误判为第三方 App
+    assert f("微信银行怎么开通", {"intent": "service_channel_consult", "confidence": 0.9})["intent"] != "out_of_scope"
+
+
 if __name__ == "__main__":
     for name, fn in sorted({k: v for k, v in globals().items()
                             if k.startswith("test_")}.items()):
