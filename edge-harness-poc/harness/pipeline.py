@@ -32,6 +32,7 @@ OOS_PLACE = re.compile(r"加油站|地铁|公交|医院|超市|电影院|火车�
 OOS_OTHER = re.compile(r"行长.{0,4}(电话|号码|办公室)|你是真人|你是谁")
 SEC_TIPS = re.compile(r"验证码|诈骗|骗子|陌生电话|钓鱼|密码.{0,4}(泄露|告诉|给别人)")
 
+
 CLOUD_FALLBACK_REPLY = "这个问题我需要帮您转接在线客服，请稍候。"
 RETRY_PROMPT_SUFFIX = "你上次的输出不符合格式：{err}。请重新输出，只输出一个 JSON 对象。"
 
