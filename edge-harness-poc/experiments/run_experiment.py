@@ -403,7 +403,7 @@ def main() -> None:
     ap.add_argument("--endpoint", help="OpenAI 兼容端点（真机填设备 IP）")
     ap.add_argument("--subsets", help="逗号分隔：intent,faq,tool,mask")
     ap.add_argument("--from-run", nargs="*", default=None, help="登记已有结果：subset=run_id ...")
-    ap.add_argument("--env", default="pc", choices=["pc", "device"])
+    ap.add_argument("--env", default="pc", choices=["pc", "device", "pc4b"], help="pc=1.7B / pc4b=4B-2507 / device=真机")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--model-label", default="qwen3-1.7b-q8_0-llamacpp-b11669")
     ap.add_argument("--verdict", default="pending",
