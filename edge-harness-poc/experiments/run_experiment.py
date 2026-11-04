@@ -461,6 +461,14 @@ def main() -> None:
         metrics |= mf.get("metrics", mf)
         print(f"已合并离线模拟指标: {a.metrics_file}")
 
+    # 防重复登记：同 scheme+env+label+runs 视为同一次实验
+    sig = (a.scheme, a.env, a.label, json.dumps(runs, sort_keys=True))
+    for old in load_records():
+        if (old["scheme"], old["env"], old["label"],
+                json.dumps(old.get("runs", {}), sort_keys=True)) == sig:
+            print(f"跳过：已有相同记录 {old['id']}（如需重登请改 --label）")
+            return
+
     commit, dirty = git_info()
     rec = {
         "id": f"{dt.datetime.now():%Y%m%d_%H%M%S}_{a.scheme}",
