@@ -390,6 +390,26 @@ schemes:
       '客服不会要验证码' vs '银行与警方绝不会索要'（语义覆盖但措辞不同）。
       偏松为 0 说明不存在"刷分型"误判，之前 F3 的刷分是补全文本本身堆砌所致，与判分器无关。
 
+  - id: E1
+    title: intent prompt 精简（易混对改速查表）
+    target: [端侧延迟, intent.macro_f1]
+    why: >
+      intent.j2 渲染 3373 字符，其中"易混对"示例占 1308（39%）。端侧每次请求都要 prefill 这段，
+      是 2-3 秒的固定开销。若精简后质量不降，等于白赚延迟。
+    change:
+      - 新增 intent_compact.j2：类清单保持（2065 字符不可省），规则压缩，易混对由 6 组示例改为 5 行速查
+      - pipeline 切到 intent_compact.j2（intent.j2 保留可回滚）
+    hypothesis: 示例的作用有限（类别定义已在 I1 修好），精简后 F1 不掉，prompt -30%
+    expected: {prompt_len: "-30%", intent.macro_f1: "±1pt"}
+    cost: 低
+    risk: I3 曾证明示例能带来 +3.9pt，精简可能回吐这部分收益
+    status: adopted
+    note: >
+      评测-34/35（双模型）：**逐项完全一致**——1.7B F1 0.8657 / acc 0.8807 / OOS 0.923；
+      4B F1 0.8991 / acc 0.9148 / OOS 0.962，均与完整版同值。prompt 3373→2373 字符（-30%）。
+      重要推论：**I3 当初的 +3.9pt 其实是"定义修好"的功效，示例只是临时拐杖**——
+      I1 修完注册表后示例已可移除。端侧每次请求少 prefill 约 1000 字符，预计省 1-2 秒。
+
   - id: X1
     title: 量化对照（Q4_K_M vs Q8_0）
     target: [速度]
