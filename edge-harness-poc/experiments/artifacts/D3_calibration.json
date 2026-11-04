@@ -1,0 +1,7 @@
+{
+  "metrics": {
+    "faq.judge_agreement": 0.886,
+    "faq.judge_strict_cases": 4,
+    "faq.judge_lenient_cases": 0
+  }
+}

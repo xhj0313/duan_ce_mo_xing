@@ -412,6 +412,7 @@ def main() -> None:
     ap.add_argument("--show", action="store_true", help="仅打印汇总表")
     ap.add_argument("--regen", action="store_true", help="仅重新生成详细文档与索引")
     ap.add_argument("--metrics-file", help="离线模拟指标 JSON（含 metrics 字段或直接 {metric:value}）")
+    ap.add_argument("--infra", action="store_true", help="基础设施类记录（护栏/脚本），无模型指标")
     ap.add_argument("--attach", nargs="*", default=[], help="关联产物（如扫描表/图表），随文档归档")
     a = ap.parse_args()
 
@@ -423,9 +424,13 @@ def main() -> None:
         return
     if not (a.scheme and a.label):
         ap.error("需要 --scheme 与 --label（或 --regen / --show）")
+    if not (a.from_run or a.endpoint or a.infra or a.metrics_file):
+        ap.error("需要 --from-run / --endpoint / --infra 之一定位指标来源")
 
     metrics, runs, subset_meta, judges = {}, {}, {}, {}
-    if a.from_run:
+    if a.infra:
+        pass
+    elif a.from_run:
         for subset, run_id in dict(x.split("=", 1) for x in a.from_run).items():
             rep = json.loads((REPORTS / run_id / "report.json").read_text(encoding="utf-8"))
             metrics |= flatten(subset, rep)
@@ -436,6 +441,8 @@ def main() -> None:
             if n_rows is None and subset == "tool":       # tool_judge 无顶层 n，按 A~D 求和
                 n_rows = sum((rep.get(t) or {}).get("n", 0) for t in "ABCD") or None
             subset_meta[subset] = {"n": n_rows, "errors": None, "wall_s": None}
+    elif a.metrics_file and not a.endpoint:
+        pass                       # 仅登记离线指标（如校准结果），不跑模型
     else:
         if not (a.endpoint and a.subsets):
             ap.error("需要 --endpoint 与 --subsets（或 --from-run / --show / --regen）")
