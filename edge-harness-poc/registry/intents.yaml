@@ -24,8 +24,8 @@ intents:
 
   - id: rate_consult
     name: 利率咨询
-    desc: 咨询存款利率、贷款利率
-    examples: ["现在定期利率多少", "一年存款利息多少", "房贷利率是多少"]
+    desc: 咨询利率水平（存/贷款利率多少、涨跌），不含本金金额试算
+    examples: ["现在定期利率多少", "房贷利率是多少", "存款利率降了吗"]
     route: faq
     knowledge: kb/rate_consult.md
 
@@ -94,8 +94,8 @@ intents:
 
   - id: statement_consult
     name: 流水与对账单咨询
-    desc: 咨询如何开流水、对账单
-    examples: ["流水怎么打", "对账单在哪开", "工资流水哪里弄"]
+    desc: 咨询如何打印流水/开对账单（流程、渠道、是否收费），不含查询本人交易记录
+    examples: ["流水怎么打", "对账单在哪开", "盖章流水怎么开"]
     route: faq
     knowledge: kb/statement_consult.md
 
@@ -203,15 +203,15 @@ intents:
 
   - id: card_apply
     name: 开卡申请
-    desc: 要求办新银行卡/信用卡
-    examples: ["办张信用卡", "开个二类户", "申请新卡"]
+    desc: 申请实体卡（借记卡/信用卡）或开立二类户、三类户
+    examples: ["办张储蓄卡", "办张信用卡", "开个二类户", "申请新卡"]
     route: cloud
     reason: 需身份核验与远程/柜面流程
 
   - id: account_open
     name: 开户咨询办理
-    desc: 要求开立账户
-    examples: ["开个账户", "我要开户", "办张储蓄卡"]
+    desc: 开立结算账户/基本户/对公账户（不含实体卡申请与二三类户）
+    examples: ["开个结算账户", "我要开对公账户", "开个基本户"]
     route: cloud
     reason: 需身份核验，法定流程
 

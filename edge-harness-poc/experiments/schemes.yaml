@@ -113,8 +113,14 @@ schemes:
     expected: {intent.macro_f1: "+2~4pt（叠加 I3 后）"}
     cost: 中（需按行内功能树确认，涉及业务口径）
     risk: 改 id 会破坏测试集标签 → 只改 desc/examples，不动 id
-    status: proposed
-    note: 与 I3 分开跑，先 I3 后 I1，便于归因
+    status: iterating
+    note: >
+      实测（评测-25/26，双模型）：4B macro-F1 0.891→0.899（+0.8pt，距阈值 0.90 仅差 0.1）；
+      1.7B 0.871→0.866（-0.5pt）。两者都在噪声内（176 条、每类 5 条，1pt≈1-2 条样本）。
+      修掉的是**真实缺陷**：rate_consult 示例"一年存款利息多少"与 calc_deposit_interest 撞车、
+      card_apply 与 account_open 示例重叠（"办张储蓄卡"/"开个二类户"）、statement_consult 与
+      query_recent_transactions 边界含糊。改动保留（定义自洽是长期价值），但**不算达标收益**；
+      需在 W2 扩充冻结集上复验才能定论。rate_consult 仍是两个模型的最差类。
 
   - id: I2
     title: 两阶段分级分类（先 route 后细分）
