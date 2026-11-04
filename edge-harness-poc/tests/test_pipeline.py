@@ -94,6 +94,19 @@ def test_intent_rules_oos_and_sec_tips():
     assert f("微信银行怎么开通", {"intent": "service_channel_consult", "confidence": 0.9})["intent"] != "out_of_scope"
 
 
+def test_rule_mask_phone_id_card_and_distractors():
+    """C1：规则前置脱敏——手机/证件/卡号命中，订单号不被误判。"""
+    from harness.pipeline import apply_rule_mask, luhn_ok
+    ents, masked = apply_rule_mask("我手机13812345678，卡号4111111111111111，麻烦查下")
+    types = {e["type"] for e in ents}
+    assert "PHONE" in types and "BANK_CARD" in types, ents
+    assert "13812345678" not in masked and "[手机_1]" in masked
+    # 订单号（非 Luhn）不得当卡号
+    ents2, _ = apply_rule_mask("订单号 1234567890123456 到账了吗")
+    assert not [e for e in ents2 if e["type"] == "BANK_CARD"], ents2
+    assert luhn_ok("4111111111111111") is True
+
+
 if __name__ == "__main__":
     for name, fn in sorted({k: v for k, v in globals().items()
                             if k.startswith("test_")}.items()):

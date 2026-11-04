@@ -32,6 +32,109 @@ OOS_PLACE = re.compile(r"加油站|地铁|公交|医院|超市|电影院|火车�
 OOS_OTHER = re.compile(r"行长.{0,4}(电话|号码|办公室)|你是真人|你是谁")
 SEC_TIPS = re.compile(r"验证码|诈骗|骗子|陌生电话|钓鱼|密码.{0,4}(泄露|告诉|给别人)")
 
+# ---- C1：脱敏前置规则（手机号/身份证/银行卡走正则，模型只管姓名与地址）----
+PHONE_RE = re.compile(r"(?<!\d)1[3-9]\d[\s-]?\d{4}[\s-]?\d{4}(?!\d)")
+ID_RE = re.compile(r"(?<![\dXx])\d{17}[\dXx](?![\dXx])")
+CARD_RE = re.compile(r"(?<!\d)(?:\d[\s-]?){11,18}\d(?!\d)")
+RULE_LABELS = {"PHONE": "手机", "ID_CARD": "证件", "BANK_CARD": "卡号"}
+
+
+def luhn_ok(digits: str) -> bool:
+    total = 0
+    for i, ch in enumerate(reversed(digits)):
+        d = int(ch)
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    return total % 10 == 0
+
+
+def sanitize_entities(ents: list, allowed=("NAME", "PHONE", "ID_CARD", "BANK_CARD", "ADDR")) -> list[dict]:
+    """过滤模型输出的脏实体：非白名单类型、占位符当原文、空原文。"""
+    out, seen = [], set()
+    for e in ents or []:
+        if not isinstance(e, dict):
+            continue
+        t, o = e.get("type"), (e.get("original") or "").strip()
+        if t not in allowed or not o or PLACEHOLDER_PAT.search(o):
+            continue
+        if (t, o) in seen:
+            continue
+        seen.add((t, o))
+        out.append({"type": t, "original": o, "placeholder": e.get("placeholder") or ""})
+    return out
+
+
+def merge_rule_entities(model_ents: list[dict], text: str) -> list[dict]:
+    """C1：模型实体 ∪ 规则实体（手机/证件/卡号），并按类型重排占位符保证唯一。"""
+    rule_ents, _ = apply_rule_mask(text)
+    merged = list(model_ents)
+    have = {(e["type"], e["original"]) for e in merged}
+    for e in rule_ents:
+        if (e["type"], e["original"]) not in have:
+            merged.append(e)
+            have.add((e["type"], e["original"]))
+
+    labels = {"NAME": "姓名", "PHONE": "手机", "ID_CARD": "证件",
+              "BANK_CARD": "卡号", "ADDR": "地址"}
+    counters: dict[str, int] = {}
+    for e in merged:
+        k = counters.get(e["type"], 0) + 1
+        counters[e["type"]] = k
+        e["placeholder"] = f"[{labels.get(e['type'], e['type'])}_{k}]"
+    return merged
+
+
+def rebuild_masked_text(text: str, ents: list[dict]) -> str:
+    """按实体原文确定性重建脱敏文本（最长匹配优先，避免嵌套替换）。"""
+    pairs = sorted(((e["original"], e["placeholder"]) for e in ents), key=lambda x: -len(x[0]))
+    out, i = [], 0
+    while i < len(text):
+        hit = next((p for p in pairs if p[0] and text.startswith(p[0], i)), None)
+        if hit:
+            out.append(hit[1])
+            i += len(hit[0])
+        else:
+            out.append(text[i])
+            i += 1
+    return "".join(out)
+
+
+def apply_rule_mask(text: str) -> tuple[list[dict], str]:
+    """C1：规则识别手机号/身份证/银行卡（返回实体列表与原位替换文本）。
+
+    顺序：身份证 → 手机号 → 银行卡（长 12-19 且过 Luhn）。重叠区段只保留先命中的类型，
+    银行卡要求 Luhn 校验，避免把订单号/流水号误判为卡号（精度优先）。
+    """
+    spans: list[tuple[int, int, str]] = []
+    for m in ID_RE.finditer(text):
+        spans.append((m.start(), m.end(), "ID_CARD"))
+    for m in PHONE_RE.finditer(text):
+        if not any(s < m.end() and e > m.start() for s, e, _ in spans):
+            spans.append((m.start(), m.end(), "PHONE"))
+    for m in CARD_RE.finditer(text):
+        s, e = m.start(), m.end()
+        if any(s < ee and e > ss for ss, ee, _ in spans):
+            continue
+        digits = re.sub(r"\D", "", m.group(0))
+        if 12 <= len(digits) <= 19 and luhn_ok(digits):
+            spans.append((s, e, "BANK_CARD"))
+
+    spans.sort()
+    counters = {k: 0 for k in RULE_LABELS}
+    ents, out, last = [], [], 0
+    for s, e, t in spans:
+        counters[t] += 1
+        placeholder = f"[{RULE_LABELS[t]}_{counters[t]}]"
+        out.append(text[last:s])
+        out.append(placeholder)
+        ents.append({"type": t, "original": text[s:e], "placeholder": placeholder})
+        last = e
+    out.append(text[last:])
+    return ents, "".join(out)
+
 
 CLOUD_FALLBACK_REPLY = "这个问题我需要帮您转接在线客服，请稍候。"
 RETRY_PROMPT_SUFFIX = "你上次的输出不符合格式：{err}。请重新输出，只输出一个 JSON 对象。"
@@ -89,17 +192,18 @@ class Harness:
 
     # ---------- ① 脱敏 ----------
     def mask(self, text: str) -> RouteResult:
+        # C1：模型照常看原文（保持行为不变），规则在前置阶段只做"实体补充"，
+        # 最后由代码确定性重建脱敏文本（避免模型改写文本引入错误）。
         prompt = self.env.get_template("mask.j2").render()
         obj, trace = self._gen_json(prompt + "\n\n输入：" + text, "mask")
         if not obj or "text" not in obj:
             # 脱敏失败的安全兜底：不脱敏则不放行原文，直接转云（合规优先）
             return RouteResult(action="cloud_fallback", masked_text="",
                                fallback_reason="mask_failed", trace=trace)
-        ents = obj.get("entities") or []
-        valid = [e for e in ents if isinstance(e, dict) and e.get("type")
-                 and e.get("original")]
-        return RouteResult(action="masked", masked_text=obj.get("text", ""),
-                            entities=valid, trace=trace)
+        model_ents = sanitize_entities(obj.get("entities") or [])
+        merged = merge_rule_entities(model_ents, text)
+        return RouteResult(action="masked", masked_text=rebuild_masked_text(text, merged),
+                           entities=merged, trace=trace)
 
     # ---------- ② 意图分类 ----------
     @staticmethod
