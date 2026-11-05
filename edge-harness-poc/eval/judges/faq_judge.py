@@ -38,6 +38,20 @@ VERIFY_PROMPT = """严格判断【答案】是否覆盖【信息点】的实质�
 只输出 JSON：{{"covered": true 或 false, "evidence": "<从答案原样摘录的片段，未覆盖则为空>"}}
 """
 
+# v4：切题性复核（只对"疑似堆资料"的行调用，控制成本与误伤）
+RELEVANCE_PROMPT = """判断【答案】是否在**直接回答**【问题】。
+
+判定为不相关的典型情形：
+- 答案主体在罗列/复述与问题无关的资料条目；
+- 答案答的是另一个话题（虽然用词相近）；
+- 答案只是把知识条目堆在一起，没有针对问题给出结论。
+
+【问题】{question}
+【答案】{reply}
+
+只输出 JSON：{{"relevant": true 或 false, "reason": "<一句话说明>"}}
+"""
+
 _FULL2HALF = str.maketrans("０１２３４５６７８９％．，", "0123456789%.,")
 
 # 同义等价组：组内任一写法视作等价（统一成规范词后再做 token 匹配）
@@ -105,6 +119,43 @@ def fuzzy_hit(reply_c: str, token: str, thresh: float = 0.75) -> bool:
     return best >= thresh
 
 
+def bigram_cov(target: str, source: str) -> float:
+    """target 的字符二元组在 source 中的覆盖率（0~1）。"""
+    t = canon(target)
+    s = canon(source)
+    if len(t) < 2:
+        return 0.0
+    grams = {t[i:i + 2] for i in range(len(t) - 1)}
+    pool = {s[i:i + 2] for i in range(len(s) - 1)}
+    return len(grams & pool) / len(grams)
+
+
+def padding_suspect(meta_points: list[str], points: dict[str, str], reply: str,
+                    cov: float = 0.6) -> list[str]:
+    """v4 前置筛：答案里是否整段复述了**非目标**信息点（堆资料的典型特征）。"""
+    out = []
+    for pid, txt in points.items():
+        if pid in meta_points or len(canon(txt)) < 10:
+            continue
+        if bigram_cov(txt, reply) >= cov:
+            out.append(pid)
+    return out
+
+
+def llm_relevant(adapter, question: str, reply: str) -> tuple[bool, str]:
+    raw, _ = adapter.generate(RELEVANCE_PROMPT.format(question=question, reply=reply),
+                              max_new_tokens=80)
+    m = re.search(r"\{.*\}", raw or "", re.S)
+    if not m:
+        return True, "parse_fail"          # 解析失败不倒向"不相关"，避免误伤
+    try:
+        obj = json.loads(m.group(0))
+    except Exception:  # noqa: BLE001
+        return True, "parse_fail"
+    reason = str(obj.get("reason") or "").strip()
+    return bool(obj.get("relevant", True)), reason
+
+
 def llm_verify(adapter, point: str, reply: str) -> bool:
     """v3 证据化复核：覆盖必须给出可回溯的原样片段。"""
     raw, _ = adapter.generate(VERIFY_PROMPT.format(point=point, reply=reply),
@@ -126,12 +177,14 @@ def llm_verify(adapter, point: str, reply: str) -> bool:
 
 def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
     rows = [json.loads(l) for l in (run_dir / "raw.jsonl").open(encoding="utf-8")]
-    if mode == "v3" and adapter is None:
-        raise SystemExit("v3 需要 --endpoint（LLM 复核）")
+    if mode in ("v3", "v4") and adapter is None:
+        raise SystemExit(f"{mode} 需要 --endpoint（LLM 复核）")
     n_point_hit = n_point_total = 0
     n_point_hit_v0 = 0
     n_point_hit_v2 = 0
+    n_point_hit_v3 = 0
     n_verified = n_verify_pass = 0
+    n_pad_rows = n_irrel_rows = 0
     n_cite = 0
     n_intent_ok = n_refuse = 0
     misses = []
@@ -139,11 +192,23 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
         meta, out = r["meta"], r["output"]
         if out.get("intent") == meta["gold_intent"] and out.get("action") == "faq":
             n_intent_ok += 1
-        if "转人工" in out.get("reply", ""):
+        reply = out.get("reply", "")
+        if "转人工" in reply:
             n_refuse += 1
         points = load_info_points(meta["gold_intent"])
-        reply = out.get("reply", "")
         reply_c = canon(reply)
+
+        # v4：先判断整行是否"切题"，判定不相关则该行所有信息点一律不计命中
+        row_irrelevant = False
+        if mode == "v4":
+            suspects = padding_suspect(meta["info_points"], points, reply)
+            if suspects:
+                n_pad_rows += 1
+                ok, _reason = llm_relevant(adapter, r["text"], reply)
+                if not ok:
+                    row_irrelevant = True
+                    n_irrel_rows += 1
+
         for pid in meta["info_points"]:
             n_point_total += 1
             line = points.get(pid, "")
@@ -161,7 +226,7 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
                     n_cite += 1
                 if not hit:
                     hit = any(canon(tok) in reply_c for tok in toks)   # 同义/格式归一后命中
-                if not hit and mode in ("v2", "v3"):
+                if not hit and mode in ("v2", "v3", "v4"):
                     # 口径收紧：含数字的信息点必须数字在场（防"5万"只答"额度"被判命中）；
                     # 无数字的信息点才允许长短语模糊匹配。
                     nums = [canon(x) for x in re.findall(r"\d+(?:\.\d+)?%?", line)]
@@ -173,11 +238,15 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
             hit_v2 = hit
             if hit_v2:
                 n_point_hit_v2 += 1
-            if mode == "v3" and not hit_v2:
+            if mode in ("v3", "v4") and not hit_v2:
                 n_verified += 1
                 if llm_verify(adapter, line, reply):
                     hit = True
                     n_verify_pass += 1
+            if hit:
+                n_point_hit_v3 += 1
+            if mode == "v4" and row_irrelevant:
+                hit = False                 # 不切题 → 覆盖不算数
             if hit:
                 n_point_hit += 1
             elif len(misses) < 20:
@@ -186,10 +255,13 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
     rate = n_point_hit / n_point_total if n_point_total else None
     rate_v0 = n_point_hit_v0 / n_point_total if n_point_total else None
     rate_v2 = n_point_hit_v2 / n_point_total if n_point_total else None
+    rate_v3 = n_point_hit_v3 / n_point_total if n_point_total else None
     return {"n": len(rows), "judge_version": mode,
             "intent_route_ok": n_intent_ok / len(rows) if rows else None,
-            "info_point_hit": rate, "info_point_hit_v0": rate_v0, "info_point_hit_v2": rate_v2,
+            "info_point_hit": rate, "info_point_hit_v0": rate_v0,
+            "info_point_hit_v2": rate_v2, "info_point_hit_v3": rate_v3,
             "verify_calls": n_verified, "verify_pass": n_verify_pass,
+            "pad_suspect_rows": n_pad_rows, "irrelevant_rows": n_irrel_rows,
             "cite_hits": n_cite,
             "refuse_rate": n_refuse / len(rows) if rows else None,
             "miss_examples": misses,
@@ -199,7 +271,7 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
-    ap.add_argument("--mode", default=JUDGE_VERSION, choices=["v0", "v1", "v2", "v3"])
+    ap.add_argument("--mode", default=JUDGE_VERSION, choices=["v0", "v1", "v2", "v3", "v4"])
     ap.add_argument("--endpoint", default="http://127.0.0.1:8080/v1",
                     help="v3 复核用的模型端点")
     a = ap.parse_args()
@@ -207,7 +279,7 @@ if __name__ == "__main__":
     if not run_dir.is_absolute():
         run_dir = Path(__file__).resolve().parent.parent / "reports" / run_dir
     adapter = None
-    if a.mode == "v3":
+    if a.mode in ("v3", "v4"):
         import sys
         sys.path.insert(0, str(ROOT))
         from harness.adapter_openai import OpenAIAdapter
