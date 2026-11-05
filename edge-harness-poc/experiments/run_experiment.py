@@ -43,6 +43,12 @@ RESULTS_JSONL = EXP / "results.jsonl"
 RESULTS_MD = EXP / "results.md"
 SCHEMES = EXP / "schemes.yaml"
 REPORTS = ROOT / "eval" / "reports"
+JUDGE_SUFFIX = ""          # 由 --judge-suffix 设置，如 "v3" → 读取 report_v3.json
+
+
+def report_file(run_dir) -> Path:
+    name = f"report_{JUDGE_SUFFIX}.json" if JUDGE_SUFFIX else "report.json"
+    return REPORTS / run_dir / name
 REPORT_DIR = WORKSPACE / "评测记录"
 PY = sys.executable
 
@@ -110,7 +116,7 @@ def run_eval(subset: str, endpoint: str, limit: int | None) -> tuple[str, int, i
 
 def run_judge(subset: str, run_dir: str) -> dict:
     sh([PY, f"eval/judges/{JUDGES[subset]}", "--run", run_dir])
-    return json.loads((REPORTS / run_dir / "report.json").read_text(encoding="utf-8"))
+    return json.loads(report_file(run_dir).read_text(encoding="utf-8"))
 
 
 def flatten(subset: str, rep: dict) -> dict:
@@ -231,7 +237,7 @@ def error_digest(rec: dict) -> list[str]:
 
     tool_run = runs.get("tool")
     if tool_run:
-        rp = REPORTS / tool_run / "report.json"
+        rp = report_file(tool_run)
         if rp.exists():
             rep = json.loads(rp.read_text(encoding="utf-8"))
             fails = (rep.get("A") or {}).get("fails", [])[:5]
@@ -412,6 +418,8 @@ def main() -> None:
     ap.add_argument("--show", action="store_true", help="仅打印汇总表")
     ap.add_argument("--regen", action="store_true", help="仅重新生成详细文档与索引")
     ap.add_argument("--metrics-file", help="离线模拟指标 JSON（含 metrics 字段或直接 {metric:value}）")
+    ap.add_argument("--judge-suffix", default="",
+                    help="读取 report[_suffix].json（如 v3 口径）")
     ap.add_argument("--infra", action="store_true", help="基础设施类记录（护栏/脚本），无模型指标")
     ap.add_argument("--attach", nargs="*", default=[], help="关联产物（如扫描表/图表），随文档归档")
     a = ap.parse_args()
@@ -427,12 +435,14 @@ def main() -> None:
     if not (a.from_run or a.endpoint or a.infra or a.metrics_file):
         ap.error("需要 --from-run / --endpoint / --infra 之一定位指标来源")
 
+    global JUDGE_SUFFIX
+    JUDGE_SUFFIX = a.judge_suffix or ""
     metrics, runs, subset_meta, judges = {}, {}, {}, {}
     if a.infra:
         pass
     elif a.from_run:
         for subset, run_id in dict(x.split("=", 1) for x in a.from_run).items():
-            rep = json.loads((REPORTS / run_id / "report.json").read_text(encoding="utf-8"))
+            rep = json.loads(report_file(run_id).read_text(encoding="utf-8"))
             metrics |= flatten(subset, rep)
             runs[subset] = run_id
             if rep.get("judge_version"):

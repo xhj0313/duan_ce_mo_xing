@@ -1,14 +1,17 @@
 """faq 子集判分：信息点命中 + 意图路由正确性 + 拒答率。
 
-python eval/judges/faq_judge.py --run reports/<run_id> [--mode v0|v1]
+python eval/judges/faq_judge.py --run reports/<run_id> [--mode v0|v1|v2|v3] [--endpoint URL]
 
-口径：
+口径演进：
 - v0（初版启发式）：期望信息点行中的数字/百分比/关键词字面出现在回复中
-- v1（F0 优化）：在 v0 基础上增加
-    ① 引用命中：回复中出现 [I1] 形式的信息点编号即视为命中（强 grounding 信号）
-    ② 同义归一：免费/免收/不收费 ↔ 0 元；0.10% ↔ 0.1%；1万元 ↔ 10000元；去千分位/全角
-  v1 仍为启发式，取代不了 LLM-as-judge；主要用于消除"同义改写被判 miss"的系统性低估。
-- 报告同时给出 info_point_hit(v1) 与 info_point_hit_v0，便于跨口径对照。
+- v1（F0 优化）：v0 + 引用命中 + 同义归一（免费/免收/不收费 ↔ 0 元 等）
+- v2（收紧）：含数字的信息点必须数字在场；无数字的才允许长短语模糊匹配
+- v3（证据化复核）：在 v2 之上，仅对 v2 判为 miss 的信息点做 LLM 复核，
+  且要求裁判从答案中**原样摘录支撑片段**（摘不出即视为未覆盖）。
+  目的：修正启发式的系统性偏严，同时用"证据必须可回溯"挡住裁判的宽松倾向。
+  注意：v3 依赖模型端点（非确定性），只用于离线校准，不接入 CI。
+
+报告同时给出 info_point_hit(v3) 与 info_point_hit(v2)，便于跨口径对照。
 """
 
 from __future__ import annotations
@@ -23,6 +26,17 @@ REG = ROOT / "registry"
 
 JUDGE_VERSION = "v2"
 THRESHOLDS = {"info_hit": 0.80}
+
+VERIFY_PROMPT = """严格判断【答案】是否覆盖【信息点】的实质内容。
+
+只依据答案中明确出现的内容，禁止常识推断或补全。
+若判定覆盖，必须从答案里**原样摘录**支撑片段作为证据；摘不出就说明没覆盖。
+
+【信息点】{point}
+【答案】{reply}
+
+只输出 JSON：{{"covered": true 或 false, "evidence": "<从答案原样摘录的片段，未覆盖则为空>"}}
+"""
 
 _FULL2HALF = str.maketrans("０１２３４５６７８９％．，", "0123456789%.,")
 
@@ -91,10 +105,33 @@ def fuzzy_hit(reply_c: str, token: str, thresh: float = 0.75) -> bool:
     return best >= thresh
 
 
-def judge(run_dir: Path, mode: str = JUDGE_VERSION) -> dict:
+def llm_verify(adapter, point: str, reply: str) -> bool:
+    """v3 证据化复核：覆盖必须给出可回溯的原样片段。"""
+    raw, _ = adapter.generate(VERIFY_PROMPT.format(point=point, reply=reply),
+                              max_new_tokens=96)
+    m = re.search(r"\{.*\}", raw or "", re.S)
+    if not m:
+        return False
+    try:
+        obj = json.loads(m.group(0))
+    except Exception:  # noqa: BLE001
+        return False
+    if not obj.get("covered"):
+        return False
+    ev = str(obj.get("evidence") or "").strip().strip('"“”')
+    if len(ev) < 2:
+        return False
+    return canon(ev) in canon(reply)          # 证据必须真的出现在答案里
+
+
+def judge(run_dir: Path, mode: str = JUDGE_VERSION, adapter=None) -> dict:
     rows = [json.loads(l) for l in (run_dir / "raw.jsonl").open(encoding="utf-8")]
+    if mode == "v3" and adapter is None:
+        raise SystemExit("v3 需要 --endpoint（LLM 复核）")
     n_point_hit = n_point_total = 0
     n_point_hit_v0 = 0
+    n_point_hit_v2 = 0
+    n_verified = n_verify_pass = 0
     n_cite = 0
     n_intent_ok = n_refuse = 0
     misses = []
@@ -124,7 +161,7 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION) -> dict:
                     n_cite += 1
                 if not hit:
                     hit = any(canon(tok) in reply_c for tok in toks)   # 同义/格式归一后命中
-                if not hit and mode == "v2":
+                if not hit and mode in ("v2", "v3"):
                     # 口径收紧：含数字的信息点必须数字在场（防"5万"只答"额度"被判命中）；
                     # 无数字的信息点才允许长短语模糊匹配。
                     nums = [canon(x) for x in re.findall(r"\d+(?:\.\d+)?%?", line)]
@@ -133,6 +170,14 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION) -> dict:
                     else:
                         hit = any(canon(p) in reply_c or (len(p) >= 4 and fuzzy_hit(reply_c, p))
                                   for p in toks)
+            hit_v2 = hit
+            if hit_v2:
+                n_point_hit_v2 += 1
+            if mode == "v3" and not hit_v2:
+                n_verified += 1
+                if llm_verify(adapter, line, reply):
+                    hit = True
+                    n_verify_pass += 1
             if hit:
                 n_point_hit += 1
             elif len(misses) < 20:
@@ -140,9 +185,11 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION) -> dict:
                                "reply": reply[:50]})
     rate = n_point_hit / n_point_total if n_point_total else None
     rate_v0 = n_point_hit_v0 / n_point_total if n_point_total else None
+    rate_v2 = n_point_hit_v2 / n_point_total if n_point_total else None
     return {"n": len(rows), "judge_version": mode,
             "intent_route_ok": n_intent_ok / len(rows) if rows else None,
-            "info_point_hit": rate, "info_point_hit_v0": rate_v0,
+            "info_point_hit": rate, "info_point_hit_v0": rate_v0, "info_point_hit_v2": rate_v2,
+            "verify_calls": n_verified, "verify_pass": n_verify_pass,
             "cite_hits": n_cite,
             "refuse_rate": n_refuse / len(rows) if rows else None,
             "miss_examples": misses,
@@ -152,14 +199,22 @@ def judge(run_dir: Path, mode: str = JUDGE_VERSION) -> dict:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
-    ap.add_argument("--mode", default=JUDGE_VERSION, choices=["v0", "v1", "v2"])
+    ap.add_argument("--mode", default=JUDGE_VERSION, choices=["v0", "v1", "v2", "v3"])
+    ap.add_argument("--endpoint", default="http://127.0.0.1:8080/v1",
+                    help="v3 复核用的模型端点")
     a = ap.parse_args()
     run_dir = Path(a.run)
     if not run_dir.is_absolute():
         run_dir = Path(__file__).resolve().parent.parent / "reports" / run_dir
-    rep = judge(run_dir, a.mode)
-    (run_dir / "report.json").write_text(json.dumps(rep, ensure_ascii=False, indent=2),
-                                         encoding="utf-8")
+    adapter = None
+    if a.mode == "v3":
+        import sys
+        sys.path.insert(0, str(ROOT))
+        from harness.adapter_openai import OpenAIAdapter
+        adapter = OpenAIAdapter(a.endpoint)
+    rep = judge(run_dir, a.mode, adapter)
+    (run_dir / f"report{'' if a.mode == JUDGE_VERSION else '_' + a.mode}.json").write_text(
+        json.dumps(rep, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in rep.items() if k != "miss_examples"},
                      ensure_ascii=False, indent=2))
     for m in rep["miss_examples"][:6]:
