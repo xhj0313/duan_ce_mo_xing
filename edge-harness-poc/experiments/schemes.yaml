@@ -149,7 +149,10 @@ schemes:
     expected: {faq.info_hit: "+15~20pt"}
     cost: 低（模板 + pipeline 解析）
     risk: JSON 包裹增加输出 token → 延迟；解析失败需兜底
-    status: proposed
+    status: iterating
+    note: >
+      评测-11：转云率 0.209→0.033（复读/绕过知识卡的问题解决），但 info_hit 仍 0.471。
+      根因：意图路由正确率仅 0.626，命中率天花板由 intent 决定 → 后续靠 I5 把路由拉到 0.68。
 
   - id: F2
     title: 知识卡标准答句 + 确定性短路
@@ -260,6 +263,7 @@ schemes:
 
   - id: M2
     title: 正则 + Luhn 校验（规则前置/事后合并）
+    alias: C1                     # 实验台账中该方案的 scheme 记为 C1
     target: [mask.precision, mask.recall]
     why: 手机号/身份证/银行卡格式强、可校验；模型分不清"订单号 vs 卡号"导致过度脱敏
     change:
