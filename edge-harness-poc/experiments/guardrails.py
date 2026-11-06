@@ -29,7 +29,7 @@ import yaml  # noqa: E402
 
 from harness.pipeline import (Harness, apply_rule_mask, merge_rule_entities,  # noqa: E402
                               rebuild_masked_text, sanitize_entities, parse_faq_output,
-                              luhn_ok)
+                              faq_shortcut, luhn_ok)
 
 REG = ROOT / "registry"
 RESULTS = ROOT / "experiments" / "results.jsonl"
@@ -97,6 +97,14 @@ def c1_mask_rules() -> None:
     assert rebuild_masked_text("张三电话13812345678", merged) == "[姓名_1]电话[手机_1]"
 
 
+def f2_shortcut() -> None:
+    """F2：高置信问题直出卡片原文，低置信必须返回 None（交给模型）。"""
+    card = (REG / "kb/rate_consult.md").read_text(encoding="utf-8")
+    hit = faq_shortcut(card, "房贷利率多少")
+    assert hit and "LPR" in hit, hit
+    assert faq_shortcut(card, "怎么开卡") is None
+
+
 def f1_parse() -> None:
     ans, cited = parse_faq_output('{"answer":"免费","cited":["I1"]}')
     assert ans == "免费" and cited == ["I1"]
@@ -158,6 +166,7 @@ def main() -> None:
         ("T1b 参数校验（含中文数字）", t1b_args),
         ("C1 脱敏规则（含 Luhn/脏输出过滤）", c1_mask_rules),
         ("F1 输出解析", f1_parse),
+        ("F2 确定性短路", f2_shortcut),
         ("注册表一致性", registry_integrity),
     ]
     for name, fn in checks:

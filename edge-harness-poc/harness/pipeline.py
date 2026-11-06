@@ -277,6 +277,10 @@ class Harness:
                                trace=trace, **base)
         if route == "faq":
             card = (REGISTRY / reg["knowledge"]).read_text(encoding="utf-8")
+            short = faq_shortcut(card, text)                   # F2：高置信直达
+            if short:
+                trace.append({"step": "faq#shortcut", "detail": "确定性命中，跳过生成"})
+                return RouteResult(action="faq", reply=short, trace=trace, **base)
             prompt = self.env.get_template("faq.j2").render(
                 knowledge_card=card, question=text)
             raw, t = self.adapter.generate(prompt)
@@ -503,6 +507,48 @@ class Harness:
         return RouteResult(action="cloud_fallback", tool_calls=calls,
                            fallback_reason="tool_failed_twice",
                            reply=CLOUD_FALLBACK_REPLY, trace=trace, **{**base, "slots": slots})
+
+
+# ---- F2：FAQ 确定性短路（高置信命中则直接返回卡片原文，不走生成）----
+FAQ_SHORTCUT_THRESH = 0.40      # 问题二元组被信息点覆盖的比例
+FAQ_SHORTCUT_TOP_K = 2
+
+
+def _faq_norm(s: str) -> str:
+    s = s.translate(str.maketrans("０１２３４５６７８９％．，", "0123456789%.,"))
+    return re.sub(r"[\s**]", "", s).lower()
+
+
+def _q_cov(question: str, point: str) -> float:
+    """问题被信息点覆盖的比例（越小越可能是跨主题）。"""
+    q, p = _faq_norm(question), _faq_norm(point)
+    if len(q) < 2:
+        return 0.0
+    grams = {q[i:i + 2] for i in range(len(q) - 1)}
+    pool = {p[i:i + 2] for i in range(len(p) - 1)}
+    return len(grams & pool) / len(grams)
+
+
+def faq_shortcut(card: str, question: str,
+                 thresh: float = FAQ_SHORTCUT_THRESH, k: int = FAQ_SHORTCUT_TOP_K) -> str | None:
+    """F2：若问题与某条信息点高度吻合，直接返回该条原文（零生成、零幻觉）。
+
+    与 A1（检索后仍生成，剪裁上下文导致负优化）的区别：这里是**直接作答**，
+    保留卡片全部内容；只在问题与条目高度吻合时生效，否则返回 None 走生成路径。
+    """
+    pts = []
+    for line in card.splitlines():
+        m = re.match(r"- \[(I\d+)\]\s*(.+)$", line.strip())
+        if m:
+            pts.append(m.group(2).replace("[占位示例]", "").strip())
+    if not pts:
+        return None
+    scored = sorted(((_q_cov(question, t), t) for t in pts), reverse=True)
+    chosen = [t for s, t in scored[:k] if s >= thresh]
+    if not chosen:
+        return None
+    body = "；".join(re.sub(r"\[[^\]]*占位[^\]]*\]", "", t).rstrip("。；; ") for t in chosen)
+    return f"根据行内资料：{body}。（以行内公示为准）"
 
 
 def parse_faq_output(raw: str) -> tuple[str, list]:
