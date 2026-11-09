@@ -47,8 +47,12 @@ JUDGE_SUFFIX = ""          # 由 --judge-suffix 设置，如 "v3" → 读取 rep
 
 
 def report_file(run_dir) -> Path:
-    name = f"report_{JUDGE_SUFFIX}.json" if JUDGE_SUFFIX else "report.json"
-    return REPORTS / run_dir / name
+    """优先取带口径后缀的报告；不存在则回退默认（intent/mask/tool 只有 report.json）。"""
+    if JUDGE_SUFFIX:
+        alt = REPORTS / run_dir / f"report_{JUDGE_SUFFIX}.json"
+        if alt.exists():
+            return alt
+    return REPORTS / run_dir / "report.json"
 REPORT_DIR = WORKSPACE / "评测记录"
 PY = sys.executable
 
