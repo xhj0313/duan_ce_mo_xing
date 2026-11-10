@@ -255,6 +255,10 @@ def main() -> None:
                 mark = "✅ 达标" if a1 >= th else f"⚠️ 差 {(th - a1) * 100:.1f}pt"
             A(f"| {METRIC_SHORT.get(k, k)} | {a0:.3f} | {a1:.3f} | "
               f"{'+' if d >= 0 else ''}{d:.1f}pt | {th if th is not None else '—'} | {mark} |")
+        if env == "device":
+            A("> **注意**：真机数据只到 2026-11-03（I5 之后）。此后采纳的 C1（规则脱敏）、E1（prompt 精简）、"
+              "F2（确定性短路）、X1（量化）**均未上机验证**，真机指标不能代表当前代码状态。")
+            A("")
         if steps[-1]["scheme"] == "X1" and len(steps) > 1:
             prev = steps[-2]["state"]
             A(f"> 注：末行 X1 是**量化档位变更**（Q4_K_M），不是 harness 改动。"
