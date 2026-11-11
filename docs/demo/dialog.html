@@ -1,0 +1,115 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>对话</title><style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  width: 390px; height: 844px; overflow: hidden;
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  background: #FFFFFF; color: #1F2328; -webkit-font-smoothing: antialiased;
+}
+.screen { width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6F7; }
+.status {
+  height: 32px; background: #FFFFFF; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 18px; font-size: 12px; font-weight: 500; color: #1F2328;
+}
+.status .right { display: flex; align-items: center; gap: 5px; }
+.bar { display: inline-block; width: 3px; background: #1F2328; border-radius: 1px; }
+.wifi { width: 13px; height: 10px; border: 1.2px solid #1F2328; border-radius: 2px 2px 0 0; border-bottom: none; }
+.batt { width: 20px; height: 10px; border: 1.2px solid #1F2328; border-radius: 2px; position: relative; }
+.batt::after { content: ""; position: absolute; left: 1.5px; top: 1.5px; bottom: 1.5px; width: 12px; background: #1F2328; border-radius: 1px; }
+.header { background: #FFFFFF; padding: 6px 18px 14px; border-bottom: 1px solid #EDEEF0; }
+.title { font-size: 20px; font-weight: 500; letter-spacing: 0.2px; }
+.sub { font-size: 11px; color: #6B7280; margin-top: 3px; }
+.body { flex: 1; overflow: hidden; padding: 14px 16px; }
+.banner {
+  background: #E6F1FB; color: #185FA5; border-radius: 10px; padding: 10px 12px;
+  font-size: 12px; line-height: 1.55; display: flex; gap: 8px; align-items: flex-start;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #185FA5; margin-top: 6px; flex: none; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+.grid .card { padding: 14px 4px; align-items: center; gap: 8px; font-size: 12px; }
+.stats { display: flex; gap: 10px; margin-top: 12px; }
+.stat { flex: 1; background: #FFFFFF; border: 1px solid #EDEEF0; border-radius: 12px; padding: 12px; }
+.stat .n { font-size: 18px; font-weight: 500; }
+.stat .l { font-size: 11px; color: #6B7280; margin-top: 3px; }
+.cap { background: #FFFFFF; border: 1px solid #EDEEF0; border-radius: 12px; margin-top: 12px; padding: 14px; }
+.cap h4 { font-size: 12px; color: #6B7280; font-weight: 500; margin-bottom: 8px; }
+.cap li { list-style: none; font-size: 12.5px; line-height: 1.9; color: #1F2328; }
+.run { background: #FFFFFF; border: 1px solid #EDEEF0; border-radius: 12px; margin-top: 12px; padding: 12px 14px; }
+.run .r { display: flex; justify-content: space-between; font-size: 11.5px; line-height: 2; }
+.run .k { color: #6B7280; }
+.run .v { color: #1F2328; }
+.card {
+  background: #FFFFFF; border-radius: 12px; padding: 16px 14px; font-size: 14px;
+  border: 1px solid #EDEEF0; display: flex; flex-direction: column; gap: 8px;
+}
+.ic { width: 26px; height: 26px; border-radius: 8px; background: #E6F1FB; }
+.recent { background: #FFFFFF; border-radius: 12px; border: 1px solid #EDEEF0; margin-top: 14px; padding: 14px; }
+.recent h4 { font-size: 12px; font-weight: 500; color: #6B7280; margin-bottom: 10px; }
+.recent .q { font-size: 13px; }
+.recent .a { font-size: 12px; color: #6B7280; margin-top: 5px; line-height: 1.5; }
+.nav {
+  height: 58px; background: #FFFFFF; border-top: 1px solid #EDEEF0;
+  display: flex; align-items: center; justify-content: space-around; font-size: 11px; color: #9CA3AF;
+}
+.nav .on { color: #185FA5; font-weight: 500; }
+.chat { flex: 1; padding: 14px 14px 8px; display: flex; flex-direction: column;
+  justify-content: flex-end; gap: 10px; overflow: hidden; }
+.row { display: flex; }
+.row.r { justify-content: flex-end; }
+.bubble {
+  max-width: 84%; padding: 10px 12px; font-size: 13px; line-height: 1.6; border-radius: 14px;
+}
+.bubble.u { background: #E6F1FB; color: #1F2328; border-top-right-radius: 4px; }
+.bubble.a {
+  background: #FFFFFF; border: 1px solid #EDEEF0; border-top-left-radius: 4px;
+}
+.src { font-size: 11px; color: #9CA3AF; margin-top: 6px; }
+.hint { font-size: 11px; color: #6B7280; text-align: right; padding-right: 2px; }
+.warn {
+  background: #FCEBEB; border-left: 3px solid #A32D2D; border-radius: 6px;
+  padding: 10px 12px; font-size: 13px; line-height: 1.6; color: #A32D2D; max-width: 88%;
+}
+.warn .tag { font-size: 11px; color: #A32D2D; opacity: 0.8; margin-top: 6px; }
+.input {
+  margin: 6px 14px 12px; background: #FFFFFF; border: 1px solid #EDEEF0; border-radius: 20px;
+  height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
+  font-size: 12px; color: #9CA3AF;
+}
+.send { color: #185FA5; font-weight: 500; }
+.badge {
+  font-size: 11px; color: #0F6E56; background: #E1F5EE; border-radius: 10px; padding: 2px 8px;
+}
+.hd { display: flex; align-items: center; justify-content: space-between; }
+.foot { font-size: 10px; color: #9CA3AF; text-align: center; padding: 4px 0 8px; }
+</style></head><body><div class='screen'><div class="status"><span>9:41</span><span class="right">
+<span class="bar" style="height:5px"></span><span class="bar" style="height:8px"></span>
+<span class="bar" style="height:11px"></span><span class="wifi"></span><span class="batt"></span>
+</span></div>
+<div class="header"><div class="hd">
+  <div><div class="title" style="font-size:17px">智能助手</div>
+  <div class="sub">本机运行 · 无需联网</div></div>
+  <span class="badge">端侧</span>
+</div></div>
+<div class="chat">
+  <div class="row r"><div class="bubble u">跨行转账收手续费吗</div></div>
+  <div class="row"><div class="bubble a">
+    手机银行行内转账免费；跨行转账 1 万元以下（普通到账）手续费为 0 元，1 万元以上按行内公示费率收取。
+    <div class="src">依据 费率说明 I2 · I3</div>
+  </div></div>
+
+  <div class="row r"><div class="bubble u">我手机 18704121430，顺便看下余额</div></div>
+  <div class="hint">已在本机脱敏 → 仅上送「[手机_1]，顺便看下余额」</div>
+  <div class="row"><div class="bubble a">
+    已为你隐藏手机号。当前可用余额 <b>¥12,345.67</b>。
+    <div class="src">工具调用 get_balance · 参数已校验</div>
+  </div></div>
+
+  <div class="row r"><div class="bubble u">查一下张三的账户余额</div></div>
+  <div class="row"><div class="warn">
+    涉及他人账户，需账户本人授权，本次未执行。已为你转接人工客服。
+    <div class="tag">安全策略拦截 · 主体校验未通过</div>
+  </div></div>
+</div>
+<div class="input"><span>输入问题…</span><span class="send">发送</span></div>
+<div class="foot">演示环境 · 数据为示例</div>
+</div></body></html>
