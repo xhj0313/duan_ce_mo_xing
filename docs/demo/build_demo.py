@@ -1,120 +1,148 @@
 """生成落地 Demo 的手机端 UI（HTML → Edge 无头渲染成 PNG）。
 
-风格参照行内"掌银助手"：薄荷渐变背景、白色圆角卡、青色渐变用户气泡、
-账单富卡片、胶囊输入框。产物：home.png / dialog.png（2x）+ 可交互 HTML。
-
-对话内容取自测试集真实题目（faq_046 / tool_C21）与真实脱敏样例（mask 手机号），
-余额等数值为示例数据。
+风格参照行内"掌银助手"实机截图：薄荷渐变、白卡、青色渐变气泡、账单富卡、胶囊输入框。
+细节对齐点：Android 状态栏（时间/速率/双 5G/电量）、渐变标题、建议问句大卡、漂浮展开按钮。
 """
 
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent
 
-MASCOT = """<svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-<path d="M13 17c0-6 4-10 9-10s9 4 9 10" fill="#F5C24B"/>
-<path d="M10 16l3-6 2 6 3-8 2 8 3-7 2 7 3-5 1 6" fill="#F7A93B"/>
-<circle cx="22" cy="22" r="10" fill="#FFF0DA"/>
-<circle cx="18.5" cy="21" r="1.4" fill="#5B4632"/>
-<circle cx="25.5" cy="21" r="1.4" fill="#5B4632"/>
-<path d="M19.5 25.2c1.6 1.3 3.4 1.3 5 0" stroke="#5B4632" stroke-width="1.4" stroke-linecap="round"/>
-<path d="M14 34c0-4 3.6-6 8-6s8 2 8 6v4H14v-4z" fill="#7BC9A8"/>
-<path d="M22 28v10" stroke="#5FAF8E" stroke-width="1.2"/>
+MASCOT = """<svg width="54" height="54" viewBox="0 0 54 54" fill="none">
+<path d="M15 21c0-8 5-13 12-13s12 5 12 13" fill="#F6C64F"/>
+<path d="M11 20l3-8 3 8 4-11 3 11 4-10 2 10 4-8 2 9 3-5 1 7" fill="#F2A33C"/>
+<circle cx="27" cy="28" r="13" fill="#FFF1DC"/>
+<circle cx="22.5" cy="27" r="1.8" fill="#4E3D2C"/>
+<circle cx="31.5" cy="27" r="1.8" fill="#4E3D2C"/>
+<path d="M24 32c2 1.7 4.4 1.7 6.4 0" stroke="#4E3D2C" stroke-width="1.8" stroke-linecap="round"/>
+<path d="M17 42c0-5 4.4-7.5 10-7.5s10 2.5 10 7.5v5H17v-5z" fill="#7FCCA9"/>
+<path d="M27 35v12" stroke="#5FAF8E" stroke-width="1.4"/>
 </svg>"""
 
-ICON_BACK = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 4L6.5 10l6 6" stroke="#2F6E63" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
-ICON_SOUND = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 8h3l4-3v10l-4-3H4V8z" stroke="#7FA79E" stroke-width="1.4" stroke-linejoin="round"/><path d="M14 7.5c1 1 1 4 0 5M16 6c1.8 1.8 1.8 6.2 0 8" stroke="#7FA79E" stroke-width="1.3" stroke-linecap="round"/></svg>"""
-ICON_GEAR = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="6.2" stroke="#7FA79E" stroke-width="1.4"/><circle cx="10" cy="10" r="2.2" stroke="#7FA79E" stroke-width="1.4"/><path d="M10 2.4v1.4M10 16.2v1.4M17.6 10h-1.4M3.8 10H2.4M15.4 4.6l-1 1M5.6 14.4l-1 1M15.4 15.4l-1-1M5.6 5.6l-1-1" stroke="#7FA79E" stroke-width="1.4" stroke-linecap="round"/></svg>"""
-ICON_MIC = """<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="6.6" y="2.5" width="4.8" height="8" rx="2.4" stroke="#2F9C86" stroke-width="1.4"/><path d="M4 9.2c0 2.8 2.2 5 5 5s5-2.2 5-5M9 14.2V16" stroke="#2F9C86" stroke-width="1.4" stroke-linecap="round"/></svg>"""
-ICON_GRID = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="2.6" stroke="#2F9C86" stroke-width="1.4"/><circle cx="13.4" cy="7" r="2.6" stroke="#2F9C86" stroke-width="1.4"/><circle cx="7" cy="13.4" r="2.6" stroke="#2F9C86" stroke-width="1.4"/><circle cx="13.4" cy="13.4" r="2.6" stroke="#9FE1CB" stroke-width="1.4"/></svg>"""
-ICON_CAL = """<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.4" y="3.4" width="11.2" height="10.2" rx="2" stroke="#B79B6A" stroke-width="1.3"/><path d="M2.4 6.6h11.2M5.6 2.2v2.4M10.4 2.2v2.4" stroke="#B79B6A" stroke-width="1.3" stroke-linecap="round"/></svg>"""
-ICON_BOX = """<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2.6l5.2 2.9v6.9L9 15.4 3.8 12.4V5.5L9 2.6z" stroke="#4C9BE8" stroke-width="1.3" stroke-linejoin="round"/><path d="M3.9 5.6L9 8.5l5.1-2.9M9 8.5v6.8" stroke="#4C9BE8" stroke-width="1.3" stroke-linejoin="round"/></svg>"""
-ICON_BASKET = """<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 6.5h12l-1.2 7.2c-.1.7-.7 1.2-1.4 1.2H5.6c-.7 0-1.3-.5-1.4-1.2L3 6.5z" fill="#F0A85C" fill-opacity=".25" stroke="#E08A3C" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.4 6.4c0-2 1.2-3.4 2.6-3.4s2.6 1.4 2.6 3.4" stroke="#E08A3C" stroke-width="1.2" stroke-linecap="round"/></svg>"""
-ICON_SHIELD = """<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2.4l5.2 1.8v4.2c0 3.2-2.2 5.8-5.2 7-3-1.2-5.2-3.8-5.2-7V4.2L9 2.4z" stroke="#2F9C86" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.8 9l1.6 1.6 3-3.1" stroke="#2F9C86" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
+ICON_BACK = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 4.5L7.5 12 15 19.5" stroke="#232B2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
+ICON_SOUND = """<svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4.5 9.5h3.6l4.6-3.4v11.8L8.1 14.5H4.5V9.5z" stroke="#6E7C79" stroke-width="1.5" stroke-linejoin="round"/><path d="M16.2 9c1.2 1.3 1.2 4.7 0 6M18.8 7.2c2.2 2.2 2.2 7.4 0 9.6" stroke="#6E7C79" stroke-width="1.4" stroke-linecap="round"/></svg>"""
+ICON_GEAR = """<svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7.4" stroke="#6E7C79" stroke-width="1.5"/><circle cx="12" cy="12" r="2.7" stroke="#6E7C79" stroke-width="1.5"/><path d="M12 2.8v1.7M12 19.5v1.7M21.2 12h-1.7M4.5 12H2.8M18.5 5.5l-1.2 1.2M6.7 17.3l-1.2 1.2M18.5 18.5l-1.2-1.2M6.7 6.7L5.5 5.5" stroke="#6E7C79" stroke-width="1.5" stroke-linecap="round"/></svg>"""
+ICON_MIC = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="7.2" y="2.4" width="5.6" height="9" rx="2.8" stroke="#2F9C86" stroke-width="1.5"/><path d="M4.2 9.6c0 3.2 2.6 5.7 5.8 5.7s5.8-2.5 5.8-5.7M10 15.3v2" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round"/></svg>"""
+ICON_GRID = """<svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="7.4" cy="7.4" r="2.9" stroke="#2F9C86" stroke-width="1.5"/><circle cx="14.6" cy="7.4" r="2.9" stroke="#2F9C86" stroke-width="1.5"/><circle cx="7.4" cy="14.6" r="2.9" stroke="#2F9C86" stroke-width="1.5"/><circle cx="14.6" cy="14.6" r="2.9" fill="#2F9C86" fill-opacity=".18" stroke="#2F9C86" stroke-width="1.5"/></svg>"""
+ICON_CAL = """<svg width="17" height="17" viewBox="0 0 16 16" fill="none"><rect x="2.2" y="3.4" width="11.6" height="10.4" rx="2.2" stroke="#B79B6A" stroke-width="1.3"/><path d="M2.2 6.6h11.6M5.5 2.1v2.6M10.5 2.1v2.6" stroke="#B79B6A" stroke-width="1.3" stroke-linecap="round"/></svg>"""
+ICON_BOX = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.6l5.8 3.2v7.6L10 16.6 4.2 13.4V5.8L10 2.6z" stroke="#4C9BE8" stroke-width="1.4" stroke-linejoin="round"/><path d="M4.3 5.9L10 9.1l5.7-3.2M10 9.1v7.3" stroke="#4C9BE8" stroke-width="1.4" stroke-linejoin="round"/></svg>"""
+ICON_BASKET = """<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3.2 7.2h13.6l-1.4 8c-.1.8-.8 1.3-1.6 1.3H6.2c-.8 0-1.5-.5-1.6-1.3l-1.4-8z" fill="#F0A85C" fill-opacity=".22" stroke="#E08A3C" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 7.1c0-2.3 1.4-3.9 3-3.9s3 1.6 3 3.9" stroke="#E08A3C" stroke-width="1.3" stroke-linecap="round"/></svg>"""
+ICON_SHIELD = """<svg width="19" height="19" viewBox="0 0 18 18" fill="none"><path d="M9 2.2l5.4 1.9v4.3c0 3.3-2.3 6-5.4 7.3-3.1-1.3-5.4-4-5.4-7.3V4.1L9 2.2z" stroke="#2F9C86" stroke-width="1.35" stroke-linejoin="round"/><path d="M6.7 8.9l1.7 1.7 3.1-3.2" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
+ICON_CHEV = """<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.4 5.4L7 9l3.6-3.6" stroke="#B79B6A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
+
+ICON_WALLET = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3.2" y="6.2" width="17.6" height="12" rx="3" stroke="#2F9C86" stroke-width="1.5"/><path d="M3.2 10.2h17.6" stroke="#2F9C86" stroke-width="1.5"/><circle cx="17" cy="14.4" r="1.3" fill="#2F9C86"/></svg>"""
+ICON_SWAP = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 9h13M13.6 5.6L17 9l-3.4 3.4" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 15H7M10.4 11.6L7 15l3.4 3.4" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>"""
+ICON_PIN = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 21c4-4.6 6-7.6 6-10a6 6 0 10-12 0c0 2.4 2 5.4 6 10z" stroke="#2F9C86" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="11" r="2.2" stroke="#2F9C86" stroke-width="1.5"/></svg>"""
+ICON_LOCK = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="5.2" y="10.4" width="13.6" height="9.4" rx="2.6" stroke="#2F9C86" stroke-width="1.5"/><path d="M8.6 10.2V8a3.4 3.4 0 016.8 0v2.2" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round"/></svg>"""
 
 CSS = """
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 390px; height: 844px; }
 body {
   font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-  color: #24302E; -webkit-font-smoothing: antialiased; overflow: hidden;
-  background: linear-gradient(180deg, #CFEDE4 0%, #DDF3EC 22%, #F2FAF7 52%, #FFFFFF 78%);
+  color: #222B2A; -webkit-font-smoothing: antialiased; overflow: hidden;
+  background: linear-gradient(178deg, #CBEADF 0%, #DAF2EA 18%, #EAF8F3 42%, #F7FCFA 64%, #FFFFFF 80%);
 }
 .screen { width: 390px; height: 844px; position: relative; display: flex; flex-direction: column; }
-.status { height: 34px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 18px; font-size: 12px; font-weight: 500; color: #2F4A44; }
-.status .r { display: flex; align-items: center; gap: 5px; font-size: 11px; }
-.bar { width: 3px; border-radius: 1px; background: #2F4A44; display: inline-block; }
-.batt { width: 20px; height: 10px; border: 1.2px solid #2F4A44; border-radius: 2.5px; position: relative; }
-.batt::after { content: ""; position: absolute; inset: 1.5px; background: #2F4A44; border-radius: 1px; }
-.wifi { width: 13px; height: 9px; border: 1.2px solid #2F4A44; border-radius: 2px 2px 0 0; border-bottom: none; }
-.header { display: flex; align-items: center; gap: 10px; padding: 2px 14px 14px; }
-.hd-title { font-size: 19px; font-weight: 500; letter-spacing: 0.3px;
-  background: linear-gradient(90deg, #2FA8C8 0%, #2EBE9E 100%);
+
+.status { height: 38px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px 0 22px; color: #1C2321; }
+.status .time { font-size: 15px; font-weight: 500; letter-spacing: 0.2px; }
+.status .r { display: flex; align-items: center; gap: 7px; }
+.speed { font-size: 9.5px; color: #3B4442; letter-spacing: -0.1px; }
+.sig { display: flex; align-items: flex-end; gap: 1.5px; }
+.sig i { width: 2.6px; background: #1C2321; border-radius: 1px; display: block; }
+.sig span { font-size: 8.5px; font-weight: 500; margin-left: 1.5px; letter-spacing: -0.2px; }
+.batt { width: 22px; height: 11px; border: 1.3px solid #1C2321; border-radius: 3px; position: relative;
+  display: flex; align-items: center; }
+.batt::before { content: ""; position: absolute; right: -3.4px; top: 3px; width: 2px; height: 4px;
+  background: #1C2321; border-radius: 0 1px 1px 0; }
+.batt i { display: block; height: 5px; margin-left: 1.5px; background: #1C2321; border-radius: 1px; }
+.pct { font-size: 10px; font-weight: 500; margin-left: 2px; }
+
+.header { display: flex; align-items: center; gap: 8px; padding: 2px 16px 16px 12px; }
+.hd-title { font-size: 21px; font-weight: 500; letter-spacing: 0.6px;
+  background: linear-gradient(92deg, #3E9FD8 0%, #33B9C4 48%, #2FC0A2 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent; }
-.hd-actions { margin-left: auto; display: flex; gap: 14px; align-items: center; }
+.hd-actions { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+
 .body { flex: 1; padding: 0 16px; overflow: hidden; }
-.say { font-size: 12.5px; color: #5E7C74; margin: 4px 0 10px; }
-.chip { background: #FFFFFF; border: 1px solid #E2EFEA; border-radius: 12px; padding: 11px 14px;
-  display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #2F4A44; margin-bottom: 10px; }
-.chip .ico { width: 22px; height: 22px; border-radius: 7px; display: flex; align-items: center;
-  justify-content: center; background: #EFF7FB; flex: none; }
-.chip .ico.warm { background: #FDF3E7; }
-.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
-.quick .q { background: #FFFFFF; border: 1px solid #E2EFEA; border-radius: 14px;
-  padding: 14px 4px; text-align: center; font-size: 11.5px; color: #2F4A44; }
-.quick .q .qi { width: 24px; height: 24px; margin: 0 auto 7px; border-radius: 8px; background: #EAF7F3; }
-.quick-title { font-size: 12.5px; color: #5E7C74; margin: 18px 0 0; }
-.privacy { margin-top: 16px; background: rgba(255,255,255,0.86); border: 1px solid #E2EFEA;
-  border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
-.privacy .t { font-size: 12px; color: #2F6E63; line-height: 1.65; }
-.privacy .b { font-size: 11.5px; color: #7FA79E; margin-top: 4px; line-height: 1.6; }
-.recent { background: #FFFFFF; border: 1px solid #E2EFEA; border-radius: 14px;
-  padding: 13px 14px; margin-top: 14px; }
-.recent .rt { font-size: 11.5px; color: #9FB8B2; margin-bottom: 7px; }
-.recent .rq { font-size: 13px; color: #24302E; }
-.recent .ra { font-size: 11.5px; color: #7FA79E; margin-top: 5px; line-height: 1.6; }
-.runinfo { margin-top: 12px; padding: 0 4px; font-size: 11px; color: #8FAFA7; line-height: 1.9; }
+.say { font-size: 13px; color: #5A756E; margin: 2px 2px 10px; }
+.saycard { background: #FFFFFF; border-radius: 16px; padding: 14px; border: 1px solid #E4F0EB; }
+.saycard .say { margin: 0 2px 11px; }
+.chip { border: 1px solid #E6F0EC; border-radius: 10px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 11px; font-size: 15px; color: #2A3532; }
+.chip + .chip { margin-top: 10px; }
+.chip .ico { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; background: #F0F7FB; flex: none; }
+.chip .ico.warm { background: #FDF4E9; }
+
+.quick-title { font-size: 13px; color: #5A756E; margin: 20px 2px 10px; }
+.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.quick .q { background: #FFFFFF; border: 1px solid #E4F0EB; border-radius: 14px;
+  padding: 15px 4px 13px; text-align: center; font-size: 12.5px; color: #2A3532; }
+.quick .q .qi { width: 28px; height: 28px; margin: 0 auto 8px; border-radius: 9px; background: #EDF8F4;
+  display: flex; align-items: center; justify-content: center; }
+
+.privacy { margin-top: 18px; background: rgba(255,255,255,0.92); border: 1px solid #E4F0EB;
+  border-radius: 16px; padding: 14px; display: flex; gap: 10px; align-items: flex-start; }
+.privacy .t { font-size: 13.5px; color: #2A6659; line-height: 1.6; font-weight: 500; }
+.privacy .b { font-size: 12px; color: #7C9C95; margin-top: 5px; line-height: 1.65; }
+
+.recent { background: #FFFFFF; border: 1px solid #E4F0EB; border-radius: 16px;
+  padding: 14px; margin-top: 14px; }
+.recent .rt { font-size: 12px; color: #9DB6B0; margin-bottom: 8px; }
+.recent .rq { font-size: 14px; color: #222B2A; }
+.recent .ra { font-size: 12.5px; color: #7C9C95; margin-top: 6px; line-height: 1.6; }
+.runinfo { margin-top: 14px; padding: 0 4px; font-size: 11px; color: #93B0A9; line-height: 1.95; }
+.runinfo div { white-space: nowrap; }
+
 .messages { flex: 1; padding: 2px 16px 6px; display: flex; flex-direction: column;
-  justify-content: flex-end; gap: 10px; overflow: hidden; }
+  justify-content: flex-end; gap: 11px; overflow: hidden; }
 .row { display: flex; }
 .row.r { justify-content: flex-end; }
-.bubble { max-width: 82%; font-size: 13.5px; line-height: 1.62; }
-.bubble.u { background: linear-gradient(96deg, #35C9B2 0%, #2FB6A6 100%); color: #FFFFFF;
-  padding: 10px 14px; border-radius: 14px 14px 4px 14px; position: relative; }
-.bubble.u::after { content: ""; position: absolute; right: -5px; bottom: 6px; width: 10px; height: 10px;
-  background: #2FB6A6; transform: rotate(45deg); border-radius: 2px; }
-.bubble.a { background: #FFFFFF; color: #24302E; padding: 11px 14px; border-radius: 14px;
-  border-bottom-left-radius: 4px; border: 1px solid #EDF5F2; }
-.src { font-size: 11px; color: #93AFA9; margin-top: 7px; }
-.hint { font-size: 11px; color: #7FA79E; text-align: right; padding-right: 2px; }
-.bill { background: linear-gradient(180deg, #FFFCF4 0%, #FBF2DE 100%); border-radius: 16px;
-  overflow: hidden; border: 1px solid #F3E7CE; }
-.bill .top { padding: 14px 16px 12px; }
-.bill .h { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #B79B6A; margin-bottom: 10px; }
+.bubble { max-width: 80%; font-size: 15px; line-height: 1.62; }
+.bubble.u { background: linear-gradient(96deg, #3ACDB4 0%, #2FB7A5 100%); color: #FFFFFF;
+  padding: 11px 15px; border-radius: 12px 12px 3px 12px; position: relative; }
+.bubble.u::after { content: ""; position: absolute; right: -5px; bottom: 7px; width: 11px; height: 11px;
+  background: #2FB7A5; transform: rotate(45deg); border-radius: 2px; }
+.bubble.a { background: #FFFFFF; color: #222B2A; padding: 13px 15px; border-radius: 12px;
+  border-bottom-left-radius: 3px; border: 1px solid #EDF6F2; }
+.src { font-size: 11.5px; color: #98B4AE; margin-top: 8px; }
+.hint { font-size: 11.5px; color: #7C9C95; text-align: right; padding-right: 2px; }
+
+.bill { background: linear-gradient(180deg, #FFFDF6 0%, #FBF3E0 100%); border-radius: 14px;
+  border: 1px solid #F2E6CD; position: relative; }
+.bill .top { padding: 15px 16px 13px; }
+.bill .h { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #B79B6A; margin-bottom: 11px; }
 .bill .nums { display: flex; gap: 12px; }
 .bill .num { flex: 1; min-width: 0; }
 .bill .num:last-child { text-align: right; }
-.bill .num .v { font-size: 18px; font-weight: 500; letter-spacing: -0.2px; white-space: nowrap; }
-.bill .num .l { font-size: 11px; color: #B79B6A; margin-top: 3px; }
-.bill .rows { background: #FFFFFF; padding: 2px 16px; }
+.bill .num .v { font-size: 23px; font-weight: 500; letter-spacing: -0.4px; white-space: nowrap; }
+.bill .num .l { font-size: 11.5px; color: #B79B6A; margin-top: 4px; }
+.bill .rows { background: #FFFFFF; border-radius: 0 0 13px 13px; padding: 2px 16px; }
 .bill .tr { display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 11px 0; border-bottom: 1px solid #F4EFE4; font-size: 12.5px; }
-.bill .tr .l { flex: 1; min-width: 0; }
+  gap: 12px; padding: 12px 0; border-bottom: 1px solid #F5F0E5; font-size: 13.5px; }
 .bill .tr:last-child { border-bottom: none; }
+.bill .tr .l { flex: 1; min-width: 0; }
 .bill .tr .n { font-weight: 500; }
-.bill .tr .s { font-size: 11px; color: #A9B7B3; margin-top: 3px; white-space: nowrap;
+.bill .tr .s { font-size: 11.5px; color: #A9B7B3; margin-top: 4px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 .bill .tr .amt { font-weight: 500; flex: none; white-space: nowrap; }
 .bill .tr .amt.pos { color: #E8892B; }
-.warn { background: #FFF4F2; border: 1px solid #FBDDD7; border-radius: 14px; padding: 12px 14px;
-  font-size: 13px; line-height: 1.62; color: #A33A2A; max-width: 86%; }
-.warn .t { font-size: 11px; color: #C0705F; margin-top: 6px; }
-.dock { padding: 8px 16px 14px; }
-.input { height: 46px; background: #FFFFFF; border: 1.5px solid #93DFCF; border-radius: 23px;
-  display: flex; align-items: center; gap: 10px; padding: 0 14px; }
-.input .ph { flex: 1; font-size: 12.5px; color: #A9BDB8; }
-.foot { text-align: center; font-size: 10px; color: #9FB8B2; padding-bottom: 6px; }
+.more { position: absolute; right: 14px; bottom: -14px; width: 30px; height: 30px; border-radius: 50%;
+  background: #FFFFFF; border: 1px solid #F0E7D2; display: flex; align-items: center;
+  justify-content: center; }
+
+.warn { background: #FFF5F2; border: 1px solid #FADCD5; border-radius: 12px; padding: 13px 15px;
+  font-size: 14.5px; line-height: 1.62; color: #A03A2A; max-width: 84%; }
+.warn .t { font-size: 11.5px; color: #BE6C5B; margin-top: 7px; }
+
+.dock { padding: 8px 16px 12px; }
+.input { height: 48px; background: #FFFFFF; border: 1.6px solid #8FDCCB; border-radius: 24px;
+  display: flex; align-items: center; gap: 11px; padding: 0 15px; }
+.input .ph { flex: 1; font-size: 13.5px; color: #A6BCB7; }
+.foot { text-align: center; font-size: 10px; color: #A3BCB6; padding-bottom: 6px; }
 """
 
 
@@ -123,9 +151,13 @@ def page(name: str, body: str) -> str:
 <title>{name}</title><style>{CSS}</style></head><body>{body}</body></html>"""
 
 
-STATUS = """<div class="status"><span>18:07</span><span class="r">
-<span>80.0 KB/s</span><span class="bar" style="height:4px"></span><span class="bar" style="height:7px"></span>
-<span class="bar" style="height:10px"></span><span class="wifi"></span><span class="batt"></span><span>88</span>
+STATUS = """<div class="status"><span class="time">18:07</span>
+<span class="r">
+  <span class="speed">80.0 KB/s</span>
+  <span class="sig"><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i><span>5G</span></span>
+  <span class="sig"><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:10px"></i><span>5G</span></span>
+  <span class="batt"><i style="width:15px"></i></span>
+  <span class="pct">88</span>
 </span></div>"""
 
 HEADER = f"""<div class="header">
@@ -141,17 +173,19 @@ DOCK = f"""<div class="dock"><div class="input">{ICON_MIC}
 
 HOME = page("首页", f"""<div class="screen">{STATUS}{HEADER}
 <div class="body">
-  <div class="say">您可以对我说：</div>
-  <div class="chip"><span class="ico">{ICON_BOX}</span>跨行转账收手续费吗</div>
-  <div class="chip"><span class="ico warm">{ICON_BASKET}</span>查下我的账户余额</div>
-  <div class="chip"><span class="ico">{ICON_BOX}</span>我要挂失银行卡</div>
+  <div class="saycard">
+    <div class="say">您可以对我说：</div>
+    <div class="chip"><span class="ico">{ICON_BOX}</span>跨行转账收手续费吗</div>
+    <div class="chip"><span class="ico warm">{ICON_BASKET}</span>查下我的账户余额</div>
+    <div class="chip"><span class="ico">{ICON_BOX}</span>我要挂失银行卡</div>
+  </div>
 
   <div class="quick-title">常用功能</div>
   <div class="quick">
-    <div class="q"><div class="qi"></div>查余额</div>
-    <div class="q"><div class="qi"></div>转账</div>
-    <div class="q"><div class="qi"></div>网点</div>
-    <div class="q"><div class="qi"></div>挂失</div>
+    <div class="q"><div class="qi">{ICON_WALLET}</div>查余额</div>
+    <div class="q"><div class="qi">{ICON_SWAP}</div>转账</div>
+    <div class="q"><div class="qi">{ICON_PIN}</div>网点</div>
+    <div class="q"><div class="qi">{ICON_LOCK}</div>挂失</div>
   </div>
 
   <div class="privacy">{ICON_SHIELD}
@@ -166,8 +200,8 @@ HOME = page("首页", f"""<div class="screen">{STATUS}{HEADER}
   </div>
 
   <div class="runinfo">
-    设备 一加 Ace 2 · Android 16　|　模型 Qwen3-1.7B · Q8_0 · 1.8 GB<br>
-    推理 llama.cpp b11669 · 本机 CPU　|　联网 0 次
+    <div>一加 Ace 2 · Android 16 · Qwen3-1.7B Q8_0 1.8GB</div>
+    <div>llama.cpp b11669 · 本机 CPU · 全程联网 0 次</div>
   </div>
 </div>
 {DOCK}
@@ -199,8 +233,9 @@ DIALOG = page("对话", f"""<div class="screen">{STATUS}{HEADER}
         <div class="tr"><div class="l"><div class="n">工资发放</div><div class="s">11-08 09:12</div></div>
           <div class="amt pos">+ ¥ 2,180.00</div></div>
       </div>
+      <div class="more">{ICON_CHEV}</div>
     </div>
-    <div class="src" style="padding:0 4px">工具调用 get_balance · 手机号已隐藏</div>
+    <div class="src" style="padding:0 4px; margin-top:16px">工具调用 get_balance · 手机号已隐藏</div>
   </div></div>
 
   <div class="row r"><div class="bubble u">查一下张三的账户余额</div></div>
@@ -213,10 +248,10 @@ DIALOG = page("对话", f"""<div class="screen">{STATUS}{HEADER}
 </div>""")
 
 INDEX = """<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>Demo 预览</title>
-<style>body{margin:0;padding:26px;background:#EEF4F2;font-family:"PingFang SC","Microsoft YaHei",system-ui;
+<style>body{margin:0;padding:26px;background:#EDF4F1;font-family:"PingFang SC","Microsoft YaHei",system-ui;
 display:flex;gap:26px;justify-content:center;align-items:flex-start}
-.phone{background:#fff;border-radius:28px;padding:9px;border:1px solid #DCE7E3}
-iframe{width:390px;height:844px;border:0;border-radius:20px;display:block}
+.phone{background:#fff;border-radius:30px;padding:9px;border:1px solid #DBE7E2}
+iframe{width:390px;height:844px;border:0;border-radius:22px;display:block}
 p{font-size:12px;color:#6B7F7A;text-align:center;margin:8px 0 0}</style></head><body>
 <div><div class="phone"><iframe src="home.html"></iframe></div><p>图 1 · 首页</p></div>
 <div><div class="phone"><iframe src="dialog.html"></iframe></div><p>图 2 · 对话</p></div>
