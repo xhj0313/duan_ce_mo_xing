@@ -1,0 +1,16 @@
+{
+  "n": 160,
+  "entity_tp": 265,
+  "entity_fp": 51,
+  "entity_fn": 17,
+  "precision": 0.8386075949367089,
+  "recall": 0.9397163120567376,
+  "f1": 0.8862876254180602,
+  "rows_with_false_mask": 33,
+  "no_pii_but_masked_rows": 19,
+  "fallback_rows": 0,
+  "threshold_check": {
+    "recall>=0.95": false,
+    "precision>=0.90": false
+  }
+}

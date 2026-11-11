@@ -1,0 +1,12 @@
+{
+  "run_id": "20261102_181405_qwen3-1.7b_tool_mid_openai",
+  "subset": "tool",
+  "backend": "openai",
+  "model": "qwen3-1.7b",
+  "device": "mid",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "n": 30,
+  "n_error": 0,
+  "created": "2026-11-02T18:16:54",
+  "note": "dry 后端数字仅验证管线，不代表模型能力"
+}

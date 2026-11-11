@@ -1,0 +1,202 @@
+{
+  "n": 176,
+  "n_error_rows": 0,
+  "accuracy": 0.8011363636363636,
+  "macro_f1": 0.8037680957035795,
+  "per_class": {
+    "account_open": {
+      "precision": 0.5714285714285714,
+      "recall": 0.8,
+      "f1": 0.6666666666666666,
+      "support": 5
+    },
+    "app_usage_guide": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "branch_hours": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "calc_deposit_interest": {
+      "precision": 0.5555555555555556,
+      "recall": 1.0,
+      "f1": 0.7142857142857143,
+      "support": 5
+    },
+    "card_apply": {
+      "precision": 0.6666666666666666,
+      "recall": 0.4,
+      "f1": 0.5,
+      "support": 5
+    },
+    "complaint_feedback": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "complex_consult": {
+      "precision": 0.5555555555555556,
+      "recall": 1.0,
+      "f1": 0.7142857142857143,
+      "support": 5
+    },
+    "deposit_product_intro": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "exchange_rate_consult": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "fee_consult": {
+      "precision": 0.8,
+      "recall": 0.8,
+      "f1": 0.8000000000000002,
+      "support": 5
+    },
+    "find_branch": {
+      "precision": 0.8333333333333334,
+      "recall": 1.0,
+      "f1": 0.9090909090909091,
+      "support": 5
+    },
+    "loan_apply": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "loan_condition_consult": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "loss_report_execute": {
+      "precision": 0.6666666666666666,
+      "recall": 0.8,
+      "f1": 0.7272727272727272,
+      "support": 5
+    },
+    "loss_report_guide": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "out_of_scope": {
+      "precision": 0.6666666666666666,
+      "recall": 0.7692307692307693,
+      "f1": 0.7142857142857142,
+      "support": 26
+    },
+    "password_change_execute": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "password_reset_guide": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "query_balance": {
+      "precision": 0.8333333333333334,
+      "recall": 1.0,
+      "f1": 0.9090909090909091,
+      "support": 5
+    },
+    "query_deposit_holding": {
+      "precision": 1.0,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "support": 5
+    },
+    "query_quota_value": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "query_recent_transactions": {
+      "precision": 0.7142857142857143,
+      "recall": 1.0,
+      "f1": 0.8333333333333333,
+      "support": 5
+    },
+    "quota_consult": {
+      "precision": 0.8,
+      "recall": 0.8,
+      "f1": 0.8000000000000002,
+      "support": 5
+    },
+    "rate_consult": {
+      "precision": 1.0,
+      "recall": 0.2,
+      "f1": 0.33333333333333337,
+      "support": 5
+    },
+    "security_tips": {
+      "precision": 0.75,
+      "recall": 0.6,
+      "f1": 0.6666666666666665,
+      "support": 5
+    },
+    "service_channel_consult": {
+      "precision": 0.8333333333333334,
+      "recall": 1.0,
+      "f1": 0.9090909090909091,
+      "support": 5
+    },
+    "sms_notice_guide": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "statement_consult": {
+      "precision": 1.0,
+      "recall": 0.4,
+      "f1": 0.5714285714285715,
+      "support": 5
+    },
+    "transfer_out": {
+      "precision": 0.8333333333333334,
+      "recall": 1.0,
+      "f1": 0.9090909090909091,
+      "support": 5
+    },
+    "wealth_product_intro": {
+      "precision": 0.6,
+      "recall": 0.6,
+      "f1": 0.6,
+      "support": 5
+    },
+    "wealth_purchase": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    }
+  },
+  "oos_reject_rate": 0.7692307692307693,
+  "false_reject_rate": 0.06666666666666667,
+  "worst_recall_class": "rate_consult",
+  "threshold_check": {
+    "macro_f1>=0.90": false,
+    "oos_reject>=0.85": false,
+    "min_class_recall>=0.85": false
+  }
+}

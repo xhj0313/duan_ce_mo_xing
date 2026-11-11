@@ -1,0 +1,12 @@
+{
+  "run_id": "20261106_112714_qwen3-1.7b_faq_mid_openai",
+  "subset": "faq",
+  "backend": "openai",
+  "model": "qwen3-1.7b",
+  "device": "mid",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "n": 91,
+  "n_error": 0,
+  "created": "2026-11-06T11:36:16",
+  "note": "dry 后端数字仅验证管线，不代表模型能力"
+}

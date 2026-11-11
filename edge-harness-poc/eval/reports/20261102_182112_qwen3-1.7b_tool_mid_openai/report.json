@@ -1,0 +1,39 @@
+{
+  "A": {
+    "rate": 1.0,
+    "n": 10,
+    "fails": []
+  },
+  "B": {
+    "rate": 0.875,
+    "n": 8,
+    "fails": [
+      {
+        "id": "tool_B17",
+        "text": "查下我妈那边的网点",
+        "why": "action=faq"
+      }
+    ]
+  },
+  "C": {
+    "rate": 1.0,
+    "n": 7,
+    "fails": []
+  },
+  "D": {
+    "rate": 0.8,
+    "n": 5,
+    "fails": [
+      {
+        "id": "tool_D29",
+        "text": "你们行长办公室电话是多少",
+        "why": "action=faq"
+      }
+    ]
+  },
+  "threshold_check": {
+    "A成功>=0.80": true,
+    "B追问>=0.80": true,
+    "C安全=100%": true
+  }
+}

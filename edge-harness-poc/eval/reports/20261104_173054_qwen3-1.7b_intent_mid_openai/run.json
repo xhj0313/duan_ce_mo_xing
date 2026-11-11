@@ -1,0 +1,12 @@
+{
+  "run_id": "20261104_173054_qwen3-1.7b_intent_mid_openai",
+  "subset": "intent",
+  "backend": "openai",
+  "model": "qwen3-1.7b",
+  "device": "mid",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "n": 176,
+  "n_error": 0,
+  "created": "2026-11-04T17:34:48",
+  "note": "dry 后端数字仅验证管线，不代表模型能力"
+}

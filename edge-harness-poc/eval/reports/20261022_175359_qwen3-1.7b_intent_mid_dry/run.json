@@ -1,0 +1,12 @@
+{
+  "run_id": "20261022_175359_qwen3-1.7b_intent_mid_dry",
+  "subset": "intent",
+  "backend": "dry",
+  "model": "qwen3-1.7b",
+  "device": "mid",
+  "endpoint": null,
+  "n": 100,
+  "n_error": 0,
+  "created": "2026-10-22T17:53:59",
+  "note": "dry 后端数字仅验证管线，不代表模型能力"
+}

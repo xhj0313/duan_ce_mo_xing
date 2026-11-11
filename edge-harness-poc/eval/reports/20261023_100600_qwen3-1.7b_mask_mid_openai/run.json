@@ -1,0 +1,12 @@
+{
+  "run_id": "20261023_100600_qwen3-1.7b_mask_mid_openai",
+  "subset": "mask",
+  "backend": "openai",
+  "model": "qwen3-1.7b",
+  "device": "mid",
+  "endpoint": "http://127.0.0.1:8080/v1",
+  "n": 160,
+  "n_error": 0,
+  "created": "2026-10-23T10:19:08",
+  "note": "dry 后端数字仅验证管线，不代表模型能力"
+}

@@ -1,0 +1,80 @@
+{
+  "A": {
+    "rate": 0.2,
+    "n": 10,
+    "fails": [
+      {
+        "id": "tool_A00",
+        "text": "查一下余额",
+        "why": "action=tool calls=[]"
+      },
+      {
+        "id": "tool_A01",
+        "text": "看看工资卡还剩多少钱",
+        "why": "action=tool calls=[]"
+      },
+      {
+        "id": "tool_A04",
+        "text": "我名下定期存款有哪些",
+        "why": "action=tool calls=[]"
+      },
+      {
+        "id": "tool_A05",
+        "text": "我现在转账限额是多少",
+        "why": "action=tool calls=[]"
+      },
+      {
+        "id": "tool_A06",
+        "text": "帮我算下5万块存三年的利息",
+        "why": "action=ask_slot calls=[]"
+      },
+      {
+        "id": "tool_A07",
+        "text": "十万存一年能拿多少利息",
+        "why": "action=ask_slot calls=[]"
+      },
+      {
+        "id": "tool_A08",
+        "text": "查下北京有哪些网点",
+        "why": "action=ask_slot calls=[]"
+      },
+      {
+        "id": "tool_A09",
+        "text": "上海附近的营业厅",
+        "why": "action=ask_slot calls=[]"
+      }
+    ]
+  },
+  "B": {
+    "rate": 0.875,
+    "n": 8,
+    "fails": [
+      {
+        "id": "tool_B17",
+        "text": "查下我妈那边的网点",
+        "why": "action=faq"
+      }
+    ]
+  },
+  "C": {
+    "rate": 1.0,
+    "n": 7,
+    "fails": []
+  },
+  "D": {
+    "rate": 0.8,
+    "n": 5,
+    "fails": [
+      {
+        "id": "tool_D29",
+        "text": "你们行长办公室电话是多少",
+        "why": "action=faq"
+      }
+    ]
+  },
+  "threshold_check": {
+    "A成功>=0.80": false,
+    "B追问>=0.80": true,
+    "C安全=100%": true
+  }
+}

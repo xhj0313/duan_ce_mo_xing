@@ -1,0 +1,100 @@
+{
+  "n": 50,
+  "n_error_rows": 0,
+  "accuracy": 0.74,
+  "macro_f1": 0.5765873015873016,
+  "per_class": {
+    "app_usage_guide": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "branch_hours": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "calc_deposit_interest": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    "deposit_product_intro": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "exchange_rate_consult": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "fee_consult": {
+      "precision": 1.0,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "support": 5
+    },
+    "loan_condition_consult": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "loss_report_execute": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    "loss_report_guide": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 5
+    },
+    "out_of_scope": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    "password_reset_guide": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 5
+    },
+    "quota_consult": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 0
+    },
+    "rate_consult": {
+      "precision": 1.0,
+      "recall": 0.2,
+      "f1": 0.33333333333333337,
+      "support": 5
+    },
+    "wealth_product_intro": {
+      "precision": 0.6,
+      "recall": 0.6,
+      "f1": 0.6,
+      "support": 5
+    }
+  },
+  "oos_reject_rate": null,
+  "false_reject_rate": 0.08,
+  "worst_recall_class": "rate_consult",
+  "threshold_check": {
+    "macro_f1>=0.90": false,
+    "oos_reject>=0.85": false,
+    "min_class_recall>=0.85": false
+  }
+}
