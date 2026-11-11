@@ -18,6 +18,7 @@ import argparse
 import datetime as dt
 import json
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -108,8 +109,19 @@ def main() -> None:
             try:
                 output = DRIVERS[a.subset](h, rec)
             except Exception as e:                    # 单条异常不中断整批
-                n_err += 1
-                output = {"__error__": f"{type(e).__name__}: {e}"}
+                # 端侧 503/超时多为"并发槽被占"或瞬时抖动，重试 2 次再判失败
+                output, ok = None, False
+                for attempt in range(2):
+                    time.sleep(3 * (attempt + 1))
+                    try:
+                        output = DRIVERS[a.subset](h, rec)
+                        ok = True
+                        break
+                    except Exception as e2:  # noqa: BLE001
+                        e = e2
+                if not ok:
+                    n_err += 1
+                    output = {"__error__": f"{type(e).__name__}: {e}"}
             out.write(json.dumps({"id": rec["id"], "text": rec["text"],
                                   "meta": rec.get("meta", {}),
                                   "output": output}, ensure_ascii=False) + "\n")

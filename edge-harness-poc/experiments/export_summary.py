@@ -256,8 +256,8 @@ def main() -> None:
             A(f"| {METRIC_SHORT.get(k, k)} | {a0:.3f} | {a1:.3f} | "
               f"{'+' if d >= 0 else ''}{d:.1f}pt | {th if th is not None else '—'} | {mark} |")
         if env == "device":
-            A("> **注意**：真机数据只到 2026-11-03（I5 之后）。此后采纳的 C1（规则脱敏）、E1（prompt 精简）、"
-              "F2（确定性短路）、X1（量化）**均未上机验证**，真机指标不能代表当前代码状态。")
+            A("> 真机已于 **2026-11-11 全量复验**（X3：C1 脱敏 + E1 精简 prompt + F2 短路均生效），"
+              "与 11-03 数据同机同模型可比；仍未上机的是 X1 量化对照（Q4 文件未推送到设备）。")
             A("")
         if steps[-1]["scheme"] == "X1" and len(steps) > 1:
             prev = steps[-2]["state"]
