@@ -113,28 +113,36 @@ body {
 .bubble { max-width: 80%; font-size: 15px; line-height: 1.62; }
 .bubble.u { background: linear-gradient(96deg, #3ACDB4 0%, #2FB7A5 100%); color: #FFFFFF;
   padding: 11px 15px; border-radius: 12px 12px 3px 12px; position: relative;
-  box-shadow: 0 4px 12px rgba(47, 183, 165, 0.22); }
+ }
 .bubble.u::after { content: ""; position: absolute; right: -5px; bottom: 7px; width: 11px; height: 11px;
   background: #2FB7A5; transform: rotate(45deg); border-radius: 2px; }
 .bubble.a { background: #FFFFFF; color: #222B2A; padding: 13px 15px; border-radius: 12px;
   border-bottom-left-radius: 3px; border: 1px solid #EDF6F2; box-shadow: 0 3px 12px rgba(38, 92, 78, 0.05); }
 .src { font-size: 11.5px; color: #98B4AE; margin-top: 8px; }
+.mtag { display: inline-block; background: #E1F5EE; color: #0F6E56; border-radius: 5px;
+  padding: 1px 6px; font-size: 10.5px; font-weight: 500; margin-right: 7px; }
+.ts { align-self: center; font-size: 11px; color: #A6BEB8; letter-spacing: 0.2px;
+  margin: 2px 0 4px; }
+.bubble.u { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 12px rgba(47, 183, 165, 0.22); }
+.bill .num .v, .bill .tr .amt, .detail .hd .big, .detail .tr .amt, .cat .vv {
+  font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.bill .tr, .detail .tr { font-variant-numeric: tabular-nums; }
 .hint { font-size: 11.5px; color: #7C9C95; text-align: right; padding-right: 2px; }
 
 .bill { background: linear-gradient(180deg, #FFFDF6 0%, #FBF3E0 100%); border-radius: 14px;
   border: 1px solid #F2E6CD; position: relative; box-shadow: 0 4px 16px rgba(150, 120, 60, 0.08); }
 .bill .top { padding: 15px 16px 13px; }
 .bill .h { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #B79B6A; margin-bottom: 11px; }
-.bill .nums { display: flex; gap: 12px; }
+.bill .nums { display: flex; gap: 18px; }
 .bill .num { flex: 1; min-width: 0; }
 .bill .num:last-child { text-align: right; }
-.bill .num .v { font-size: 23px; font-weight: 600; letter-spacing: -0.4px; white-space: nowrap; }
+.bill .num .v { font-size: 21px; font-weight: 600; letter-spacing: -0.4px; white-space: nowrap; }
 .bill .num .l { font-size: 11.5px; color: #B79B6A; margin-top: 4px; }
 .bill .rows { background: #FFFFFF; border-radius: 0 0 13px 13px; padding: 2px 16px; }
 .bill .tr { display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 12px 0; border-bottom: 1px solid #F5F0E5; font-size: 13.5px; }
 .bill .tr:last-child { border-bottom: none; }
-.bill .tr .l { flex: 1; min-width: 0; }
+.bill .tr .l { flex: 1; min-width: 0; padding-right: 10px; }
 .bill .tr .n { font-weight: 500; }
 .bill .tr .s { font-size: 11.5px; color: #A9B7B3; margin-top: 4px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
@@ -169,7 +177,13 @@ body {
 .detail .tr { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 13px 0; border-bottom: 1px solid #F5F0E5; font-size: 14px; }
 .detail .tr:last-child { border-bottom: none; }
-.detail .tr .l { flex: 1; min-width: 0; }
+.detail .tr .l { flex: 1; min-width: 0; padding-right: 10px; }
+.detail .tr .av { width: 34px; height: 34px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 500; color: #FFFFFF; margin-right: 11px; }
+.fb { display: flex; gap: 16px; font-size: 11.5px; color: #9DB6B0; margin-top: 10px;
+  padding-top: 9px; border-top: 1px solid #F1F6F4; }
+.recent .rt { display: flex; justify-content: space-between; }
 .detail .tr .n { font-weight: 500; }
 .detail .tr .s { font-size: 11.5px; color: #A9B7B3; margin-top: 4px; }
 .detail .tr .amt { font-weight: 500; white-space: nowrap; }
@@ -216,9 +230,11 @@ def u(text: str) -> str:
     return f'<div class="row r"><div class="bubble u">{text}</div></div>'
 
 
-def a(text: str, src: str = "") -> str:
+def a(text: str, src: str = "", feedback: bool = False) -> str:
     s = f'<div class="src">{src}</div>' if src else ""
-    return f'<div class="row"><div class="bubble a">{text}{s}</div></div>'
+    fb = ('<div class="fb"><span>有帮助</span><span>没帮上</span><span>复制</span></div>'
+          if feedback else "")
+    return f'<div class="row"><div class="bubble a">{text}{s}{fb}</div></div>'
 
 
 def bill_card() -> str:
@@ -233,14 +249,14 @@ def bill_card() -> str:
       </div>
     </div>
     <div class="rows">
-      <div class="tr"><div class="l"><div class="n">转账-熊豪杰</div><div class="s">借记卡 8474 · 11-10 17:36</div></div>
+      <div class="tr"><div class="l"><div class="n">转账-熊*杰</div><div class="s">尾号 8474 · 11-10</div></div>
         <div class="amt">- ¥ 1,500.00</div></div>
       <div class="tr"><div class="l"><div class="n">工资发放</div><div class="s">11-08 09:12</div></div>
         <div class="amt pos">+ ¥ 2,180.00</div></div>
     </div>
     <div class="more">{ICON_CHEV}</div>
   </div>
-  <div class="src" style="padding:0 4px; margin-top:16px">工具调用 get_balance · 手机号已隐藏</div>
+  <div class="src" style="padding:0 4px; margin-top:16px"><span class="mtag">已脱敏</span>工具调用 get_balance · 手机号未上送</div>
 </div></div>"""
 
 
@@ -274,7 +290,7 @@ HOME = page("首页", f"""<div class="screen">{STATUS}{header()}
   </div>
 
   <div class="recent">
-    <div class="rt">最近对话</div>
+    <div class="rt"><span>最近对话</span><span>18:02</span></div>
     <div class="rq">跨行转账收手续费吗</div>
     <div class="ra">行内转账免费；跨行 1 万元以下 0 元（优惠期内）</div>
   </div>
@@ -289,18 +305,20 @@ HOME = page("首页", f"""<div class="screen">{STATUS}{header()}
 
 CHAT_FAQ = page("费率问答", f"""<div class="screen">{STATUS}{header()}
 <div class="messages">
+  <div class="ts">今天 18:07</div>
   {u("跨行转账收手续费吗")}
   {a("手机银行行内转账免费；跨行转账 1 万元以下（普通到账）手续费为 0 元，1 万元以上按行内公示费率收取。", "依据 费率说明 I2 · I3")}
   {u("那 ATM 取现呢")}
-  {a("本行 ATM 取款免费；跨行 ATM 取款每笔按行内公示价目收费，具体以网点公告为准。", "依据 费率说明 I4")}
+  {a("本行 ATM 取款免费；跨行 ATM 取款每笔按行内公示价目收费，具体以网点公告为准。", "依据 费率说明 I4", feedback=True)}
 </div>
 {DOCK}
 </div>""")
 
 CHAT_BILL = page("余额查询", f"""<div class="screen">{STATUS}{header()}
 <div class="messages">
-  {u("我手机 18704121430，顺便看下余额")}
-  <div class="hint">已在本机脱敏 → 仅上送「[手机_1]，顺便看下余额」</div>
+  <div class="ts">今天 18:07</div>
+  {u("我手机 187****1430，顺便看下余额")}
+  <div class="hint">已在本机脱敏 → 手机号替换为 [手机_1]</div>
   {a("手机号已为你隐藏，余额如下：")}
   {bill_card()}
 </div>
@@ -309,7 +327,8 @@ CHAT_BILL = page("余额查询", f"""<div class="screen">{STATUS}{header()}
 
 CHAT_BLOCK = page("安全拦截", f"""<div class="screen">{STATUS}{header()}
 <div class="messages">
-  {u("查一下张三的账户余额")}
+  <div class="ts">今天 18:07</div>
+  {u("查一下张*三的账户余额")}
   <div class="row"><div class="warn">
     涉及他人账户，需账户本人授权，本次未执行。已为你转接人工客服。
     <div class="t">安全策略拦截 · 主体校验未通过</div>
@@ -325,18 +344,18 @@ BILL_DETAIL = page("收支明细", f"""<div class="screen">{STATUS}{header("收�
     <div class="hd">
       <div class="cap">本月支出（元）</div>
       <div class="big">13,630.00</div>
-      <div class="sub">共 6 笔 · 收入 13,814.30 元 · 共 4 笔</div>
+      <div class="sub">共 6 笔 · 收入 13,814.30 元 · 共 4 笔 · 对方姓名已脱敏</div>
     </div>
     <div class="list">
-      <div class="tr"><div class="l"><div class="n">转账-熊豪杰</div><div class="s">借记卡 8474 · 11-10 17:36</div></div>
+      <div class="tr"><span class="av" style="background:#5EB8A6">转</span><div class="l"><div class="n">转账-熊*杰</div><div class="s">借记卡 8474 · 11-10 17:36</div></div>
         <div class="amt">- ¥ 13,500.00</div></div>
-      <div class="tr"><div class="l"><div class="n">工资发放</div><div class="s">11-08 09:12 · 代发</div></div>
+      <div class="tr"><span class="av" style="background:#E9A75C">薪</span><div class="l"><div class="n">工资发放</div><div class="s">11-08 09:12 · 代发</div></div>
         <div class="amt pos">+ ¥ 12,438.00</div></div>
-      <div class="tr"><div class="l"><div class="n">扫码支付-便利店</div><div class="s">11-07 21:05</div></div>
+      <div class="tr"><span class="av" style="background:#7FA9DE">消</span><div class="l"><div class="n">扫码支付-便利店</div><div class="s">11-07 21:05</div></div>
         <div class="amt">- ¥ 38.50</div></div>
-      <div class="tr"><div class="l"><div class="n">信用卡还款</div><div class="s">11-05 10:22 · 自动还款</div></div>
+      <div class="tr"><span class="av" style="background:#B08BD0">还</span><div class="l"><div class="n">信用卡还款</div><div class="s">11-05 10:22 · 自动还款</div></div>
         <div class="amt">- ¥ 2,000.00</div></div>
-      <div class="tr"><div class="l"><div class="n">理财赎回</div><div class="s">11-03 15:40</div></div>
+      <div class="tr"><span class="av" style="background:#6FC49B">理</span><div class="l"><div class="n">理财赎回</div><div class="s">11-03 15:40</div></div>
         <div class="amt pos">+ ¥ 1,376.30</div></div>
     </div>
     <div class="foot-row">查看全部 10 笔</div>
@@ -354,6 +373,7 @@ BILL_DETAIL = page("收支明细", f"""<div class="screen">{STATUS}{header("收�
 
 CHAT_LOSS = page("挂失办理", f"""<div class="screen">{STATUS}{header()}
 <div class="messages">
+  <div class="ts">今天 18:07</div>
   {u("我要挂失银行卡")}
   {a("请问是要挂失尾号 8474 的借记卡吗？挂失后该卡将立即停止支付，补卡需到网点办理。")}
   {u("对，就是这张")}
