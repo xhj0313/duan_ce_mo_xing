@@ -143,6 +143,36 @@ body {
 .fb { display: flex; gap: 16px; font-size: 11.5px; color: #9DB6B0; margin-top: 10px;
   padding-top: 9px; border-top: 1px solid #F1F6F4; }
 .recent .rt { display: flex; justify-content: space-between; }
+
+.new { font-size: 9.5px; color: #E8892B; border: 1px solid #F6D9B4; background: #FFF7EC;
+  border-radius: 4px; padding: 1px 5px; margin-left: auto; font-weight: 500; letter-spacing: 0.3px; }
+.human { margin-top: 14px; background: #FFFFFF; border: 1px solid #E9F3EF; border-radius: 14px;
+  padding: 13px 14px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(38, 92, 78, 0.04); }
+.human .hl { font-size: 13px; color: #2A3532; }
+.human .hs { font-size: 11px; color: #9DB6B0; margin-top: 4px; }
+.human .go { font-size: 12.5px; color: #2F9C86; font-weight: 500; white-space: nowrap; }
+.tags { display: flex; gap: 7px; padding: 0 0 10px; overflow: hidden; }
+.tags .t { flex: none; border: 1px solid #D9EDE7; background: rgba(255,255,255,0.94);
+  color: #2F6E63; border-radius: 16px; padding: 6px 11px; font-size: 11.5px; white-space: nowrap; }
+.tags .t.human-t { color: #B07A3C; border-color: #F0DFC4; background: #FFFBF3; }
+.toolbar { display: flex; justify-content: space-between; font-size: 12px;
+  color: #7C9C95; padding: 0 4px 10px; }
+.agent { width: 88%; background: #FFFFFF; border: 1px solid #E9F3EF; border-radius: 14px;
+  padding: 14px; box-shadow: 0 3px 14px rgba(38, 92, 78, 0.06); }
+.agent .ah { display: flex; align-items: center; gap: 10px; }
+.agent .av2 { width: 36px; height: 36px; border-radius: 50%; background: #E1F5EE;
+  color: #0F6E56; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 500; flex: none; }
+.agent .an { font-size: 13.5px; color: #222B2A; }
+.agent .as { font-size: 11px; color: #2F9C86; margin-top: 3px; }
+.agent .aline { height: 1px; background: #F1F6F4; margin: 12px 0; }
+.agent .aq { font-size: 13.5px; line-height: 1.65; color: #2A3532; }
+.agent .abtns { display: flex; gap: 10px; margin-top: 13px; }
+.agent .abtns span { flex: 1; text-align: center; border: 1px solid #D9EDE7;
+  border-radius: 16px; padding: 7px 0; font-size: 12px; color: #2F6E63; }
+.agent .abtns span:last-child { color: #9DB6B0; border-color: #EEF4F2; }
+
 .detail .tr .n { font-weight: 500; }
 .detail .tr .s { font-size: 11.5px; color: #A9B7B3; margin-top: 4px; }
 .detail .tr .amt { font-weight: 500; white-space: nowrap; }
@@ -165,6 +195,7 @@ body {
   <span class="pct">88</span>
 </span></div><div class="header"><span><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 4.5L7.5 12 15 19.5" stroke="#232B2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="hd-simple">收支明细</span></div>
 <div class="body" style="padding-top:4px">
+  <div class="toolbar"><span>2026 年 11 月</span><span>筛选 · 导出明细</span></div>
   <div class="detail">
     <div class="hd">
       <div class="cap">本月支出（元）</div>

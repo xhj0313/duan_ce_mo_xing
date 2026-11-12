@@ -143,6 +143,36 @@ body {
 .fb { display: flex; gap: 16px; font-size: 11.5px; color: #9DB6B0; margin-top: 10px;
   padding-top: 9px; border-top: 1px solid #F1F6F4; }
 .recent .rt { display: flex; justify-content: space-between; }
+
+.new { font-size: 9.5px; color: #E8892B; border: 1px solid #F6D9B4; background: #FFF7EC;
+  border-radius: 4px; padding: 1px 5px; margin-left: auto; font-weight: 500; letter-spacing: 0.3px; }
+.human { margin-top: 14px; background: #FFFFFF; border: 1px solid #E9F3EF; border-radius: 14px;
+  padding: 13px 14px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(38, 92, 78, 0.04); }
+.human .hl { font-size: 13px; color: #2A3532; }
+.human .hs { font-size: 11px; color: #9DB6B0; margin-top: 4px; }
+.human .go { font-size: 12.5px; color: #2F9C86; font-weight: 500; white-space: nowrap; }
+.tags { display: flex; gap: 7px; padding: 0 0 10px; overflow: hidden; }
+.tags .t { flex: none; border: 1px solid #D9EDE7; background: rgba(255,255,255,0.94);
+  color: #2F6E63; border-radius: 16px; padding: 6px 11px; font-size: 11.5px; white-space: nowrap; }
+.tags .t.human-t { color: #B07A3C; border-color: #F0DFC4; background: #FFFBF3; }
+.toolbar { display: flex; justify-content: space-between; font-size: 12px;
+  color: #7C9C95; padding: 0 4px 10px; }
+.agent { width: 88%; background: #FFFFFF; border: 1px solid #E9F3EF; border-radius: 14px;
+  padding: 14px; box-shadow: 0 3px 14px rgba(38, 92, 78, 0.06); }
+.agent .ah { display: flex; align-items: center; gap: 10px; }
+.agent .av2 { width: 36px; height: 36px; border-radius: 50%; background: #E1F5EE;
+  color: #0F6E56; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 500; flex: none; }
+.agent .an { font-size: 13.5px; color: #222B2A; }
+.agent .as { font-size: 11px; color: #2F9C86; margin-top: 3px; }
+.agent .aline { height: 1px; background: #F1F6F4; margin: 12px 0; }
+.agent .aq { font-size: 13.5px; line-height: 1.65; color: #2A3532; }
+.agent .abtns { display: flex; gap: 10px; margin-top: 13px; }
+.agent .abtns span { flex: 1; text-align: center; border: 1px solid #D9EDE7;
+  border-radius: 16px; padding: 7px 0; font-size: 12px; color: #2F6E63; }
+.agent .abtns span:last-child { color: #9DB6B0; border-color: #EEF4F2; }
+
 .detail .tr .n { font-weight: 500; }
 .detail .tr .s { font-size: 11.5px; color: #A9B7B3; margin-top: 4px; }
 .detail .tr .amt { font-weight: 500; white-space: nowrap; }
@@ -199,7 +229,9 @@ body {
   <div class="src" style="padding:0 4px; margin-top:16px"><span class="mtag">已脱敏</span>工具调用 get_balance · 手机号未上送</div>
 </div></div>
 </div>
-<div class="dock"><div class="input"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="7.2" y="2.4" width="5.6" height="9" rx="2.8" stroke="#2F9C86" stroke-width="1.5"/><path d="M4.2 9.6c0 3.2 2.6 5.7 5.8 5.7s5.8-2.5 5.8-5.7M10 15.3v2" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round"/></svg>
+<div class="dock"><div class="tags">
+<span class="t">查余额</span><span class="t">转账</span><span class="t">收支明细</span><span class="t">挂失</span><span class="t human-t">转人工</span>
+</div><div class="input"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="7.2" y="2.4" width="5.6" height="9" rx="2.8" stroke="#2F9C86" stroke-width="1.5"/><path d="M4.2 9.6c0 3.2 2.6 5.7 5.8 5.7s5.8-2.5 5.8-5.7M10 15.3v2" stroke="#2F9C86" stroke-width="1.5" stroke-linecap="round"/></svg>
 <span class="ph">发消息或长按说话</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="7.4" cy="7.4" r="2.9" stroke="#2F9C86" stroke-width="1.5"/><circle cx="14.6" cy="7.4" r="2.9" stroke="#2F9C86" stroke-width="1.5"/><circle cx="7.4" cy="14.6" r="2.9" stroke="#2F9C86" stroke-width="1.5"/><circle cx="14.6" cy="14.6" r="2.9" fill="#2F9C86" fill-opacity=".18" stroke="#2F9C86" stroke-width="1.5"/></svg></div></div>
 <div class="foot">演示环境 · 数据为示例</div><div class="gesture"></div>
 </div></body></html>

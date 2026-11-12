@@ -184,6 +184,36 @@ body {
 .fb { display: flex; gap: 16px; font-size: 11.5px; color: #9DB6B0; margin-top: 10px;
   padding-top: 9px; border-top: 1px solid #F1F6F4; }
 .recent .rt { display: flex; justify-content: space-between; }
+
+.new { font-size: 9.5px; color: #E8892B; border: 1px solid #F6D9B4; background: #FFF7EC;
+  border-radius: 4px; padding: 1px 5px; margin-left: auto; font-weight: 500; letter-spacing: 0.3px; }
+.human { margin-top: 14px; background: #FFFFFF; border: 1px solid #E9F3EF; border-radius: 14px;
+  padding: 13px 14px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(38, 92, 78, 0.04); }
+.human .hl { font-size: 13px; color: #2A3532; }
+.human .hs { font-size: 11px; color: #9DB6B0; margin-top: 4px; }
+.human .go { font-size: 12.5px; color: #2F9C86; font-weight: 500; white-space: nowrap; }
+.tags { display: flex; gap: 7px; padding: 0 0 10px; overflow: hidden; }
+.tags .t { flex: none; border: 1px solid #D9EDE7; background: rgba(255,255,255,0.94);
+  color: #2F6E63; border-radius: 16px; padding: 6px 11px; font-size: 11.5px; white-space: nowrap; }
+.tags .t.human-t { color: #B07A3C; border-color: #F0DFC4; background: #FFFBF3; }
+.toolbar { display: flex; justify-content: space-between; font-size: 12px;
+  color: #7C9C95; padding: 0 4px 10px; }
+.agent { width: 88%; background: #FFFFFF; border: 1px solid #E9F3EF; border-radius: 14px;
+  padding: 14px; box-shadow: 0 3px 14px rgba(38, 92, 78, 0.06); }
+.agent .ah { display: flex; align-items: center; gap: 10px; }
+.agent .av2 { width: 36px; height: 36px; border-radius: 50%; background: #E1F5EE;
+  color: #0F6E56; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 500; flex: none; }
+.agent .an { font-size: 13.5px; color: #222B2A; }
+.agent .as { font-size: 11px; color: #2F9C86; margin-top: 3px; }
+.agent .aline { height: 1px; background: #F1F6F4; margin: 12px 0; }
+.agent .aq { font-size: 13.5px; line-height: 1.65; color: #2A3532; }
+.agent .abtns { display: flex; gap: 10px; margin-top: 13px; }
+.agent .abtns span { flex: 1; text-align: center; border: 1px solid #D9EDE7;
+  border-radius: 16px; padding: 7px 0; font-size: 12px; color: #2F6E63; }
+.agent .abtns span:last-child { color: #9DB6B0; border-color: #EEF4F2; }
+
 .detail .tr .n { font-weight: 500; }
 .detail .tr .s { font-size: 11.5px; color: #A9B7B3; margin-top: 4px; }
 .detail .tr .amt { font-weight: 500; white-space: nowrap; }
@@ -221,7 +251,13 @@ def header(title: str = "我是您的掌银助手", actions: bool = True, mascot
     return f'<div class="header"><span>{ICON_BACK}</span>{mas}{body}{acts}</div>'
 
 
-DOCK = f"""<div class="dock"><div class="input">{ICON_MIC}
+DOCK = f"""<div class="dock"><div class="tags">
+<span class="t">查余额</span><span class="t">转账</span><span class="t">收支明细</span><span class="t">挂失</span><span class="t human-t">转人工</span>
+</div><div class="input">{ICON_MIC}
+<span class="ph">发消息或长按说话</span>{ICON_GRID}</div></div>
+<div class="foot">演示环境 · 数据为示例</div><div class="gesture"></div>"""
+
+DOCK_PLAIN = f"""<div class="dock"><div class="input">{ICON_MIC}
 <span class="ph">发消息或长按说话</span>{ICON_GRID}</div></div>
 <div class="foot">演示环境 · 数据为示例</div><div class="gesture"></div>"""
 
@@ -270,8 +306,8 @@ def page(name: str, body: str) -> str:
 HOME = page("首页", f"""<div class="screen">{STATUS}{header()}
 <div class="body">
   <div class="saycard">
-    <div class="say">您可以对我说：</div>
-    <div class="chip"><span class="ico">{ICON_BOX}</span>跨行转账收手续费吗</div>
+    <div class="say">猜您想问</div>
+    <div class="chip"><span class="ico">{ICON_BOX}</span>跨行转账收手续费吗<span class="new">new</span></div>
     <div class="chip"><span class="ico warm">{ICON_BASKET}</span>查下我的账户余额</div>
     <div class="chip"><span class="ico">{ICON_BOX}</span>我要挂失银行卡</div>
   </div>
@@ -289,10 +325,10 @@ HOME = page("首页", f"""<div class="screen">{STATUS}{header()}
     <div class="b">手机号、卡号、身份证不出设备，仅上送脱敏后文本；对话与账户数据不上传云端。</div></div>
   </div>
 
-  <div class="recent">
-    <div class="rt"><span>最近对话</span><span>18:02</span></div>
-    <div class="rq">跨行转账收手续费吗</div>
-    <div class="ra">行内转账免费；跨行 1 万元以下 0 元（优惠期内）</div>
+  <div class="human">
+    <div><div class="hl">没找到想要的答案？</div>
+      <div class="hs">人工客服 7×24 在线 · 已服务 4,440 万人</div></div>
+    <span class="go">转人工 ›</span>
   </div>
 
   <div class="runinfo">
@@ -300,7 +336,7 @@ HOME = page("首页", f"""<div class="screen">{STATUS}{header()}
     <div>llama.cpp b11669 · 本机 CPU · 全程联网 0 次</div>
   </div>
 </div>
-{DOCK}
+{DOCK_PLAIN}
 </div>""")
 
 CHAT_FAQ = page("费率问答", f"""<div class="screen">{STATUS}{header()}
@@ -340,6 +376,7 @@ CHAT_BLOCK = page("安全拦截", f"""<div class="screen">{STATUS}{header()}
 
 BILL_DETAIL = page("收支明细", f"""<div class="screen">{STATUS}{header("收支明细", actions=False, mascot=False)}
 <div class="body" style="padding-top:4px">
+  <div class="toolbar"><span>2026 年 11 月</span><span>筛选 · 导出明细</span></div>
   <div class="detail">
     <div class="hd">
       <div class="cap">本月支出（元）</div>
@@ -383,6 +420,24 @@ CHAT_LOSS = page("挂失办理", f"""<div class="screen">{STATUS}{header()}
 {DOCK}
 </div>""")
 
+
+CHAT_HUMAN = page("转人工客服", f"""<div class="screen">{STATUS}{header()}
+<div class="messages">
+  <div class="ts">今天 18:07</div>
+  {u("转人工")}
+  {a("已为你接入人工客服。为保护账户安全，人工客服不会向你索要密码或验证码。", "安全提示 · 会话已加密")}
+  <div class="row"><div class="agent">
+    <div class="ah"><span class="av2">客</span>
+      <div><div class="an">人工客服 · 工号 2048</div><div class="as">已接入 · 7×24 在线</div></div></div>
+    <div class="aline"></div>
+    <div class="aq">您好，已收到前面的对话记录。请问需要协助办理什么业务？</div>
+    <div class="abtns"><span>继续咨询</span><span>结束会话</span></div>
+  </div></div>
+  <div class="hint">对话已加密 · 敏感信息继续保持脱敏</div>
+</div>
+{DOCK}
+</div>""")
+
 SCREENS = {
     "01-home": HOME,
     "02-chat-faq": CHAT_FAQ,
@@ -390,6 +445,7 @@ SCREENS = {
     "04-chat-block": CHAT_BLOCK,
     "05-bill-detail": BILL_DETAIL,
     "06-chat-loss": CHAT_LOSS,
+    "07-chat-human": CHAT_HUMAN,
 }
 
 GALLERY = """<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>Demo 预览</title>
@@ -402,7 +458,8 @@ p{font-size:12px;color:#5F7A73;text-align:center;margin:6px 0 0}</style></head><
 """ + "".join(
     f'<div class="cell"><div class="phone"><iframe src="{k}.html"></iframe></div><p>{t}</p></div>'
     for k, t in [("01-home", "① 首页"), ("02-chat-faq", "② 费率问答"), ("03-chat-bill", "③ 余额与账单"),
-                 ("04-chat-block", "④ 安全拦截"), ("05-bill-detail", "⑤ 收支明细"), ("06-chat-loss", "⑥ 挂失办理")]
+                 ("04-chat-block", "④ 安全拦截"), ("05-bill-detail", "⑤ 收支明细"),
+                 ("06-chat-loss", "⑥ 挂失办理"), ("07-chat-human", "⑦ 转人工客服")]
 ) + "</body></html>"
 
 for name, html in list(SCREENS.items()) + [("index", GALLERY)]:
