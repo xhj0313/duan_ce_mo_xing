@@ -1,0 +1,10 @@
+{
+  "model": "qwen3-1.7b-q8",
+  "rounds": 20,
+  "per_round": 8,
+  "created": "2026-11-17T11:03:02",
+  "first3_tps": 20.08,
+  "last3_tps": 19.96,
+  "decay_pct": 0.6,
+  "note": "PC 替代口径：测吞吐衰减，不等于真机温升降频；每轮请求数固定"
+}

@@ -1,0 +1,630 @@
+{
+  "qwen3-1.7b-q8": {
+    "fee_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "exchange_rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "branch_hours": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loss_report_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "password_reset_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "app_usage_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "deposit_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "wealth_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loan_condition_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "quota_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "statement_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.8
+    },
+    "sms_notice_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "security_tips": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "service_channel_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_balance": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_recent_transactions": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_deposit_holding": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_quota_value": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "find_branch": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "calc_deposit_interest": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "transfer_out": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "wealth_purchase": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.4
+    },
+    "loan_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "card_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "account_open": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "loss_report_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "password_change_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "complaint_feedback": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complex_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.4
+    },
+    "out_of_scope": {
+      "n": 26,
+      "weight": 0.1477,
+      "local_rate": 1.0
+    }
+  },
+  "qwen3-1.7b-q4": {
+    "fee_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "exchange_rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "branch_hours": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loss_report_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "password_reset_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "app_usage_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "deposit_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "wealth_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loan_condition_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "quota_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "statement_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.8
+    },
+    "sms_notice_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "security_tips": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "service_channel_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_balance": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_recent_transactions": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_deposit_holding": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_quota_value": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "find_branch": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "calc_deposit_interest": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "transfer_out": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "wealth_purchase": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.4
+    },
+    "loan_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "card_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "account_open": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "loss_report_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "password_change_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complaint_feedback": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complex_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "out_of_scope": {
+      "n": 26,
+      "weight": 0.1477,
+      "local_rate": 0.9615
+    }
+  },
+  "qwen3-4b-q4": {
+    "fee_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "exchange_rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "branch_hours": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loss_report_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.8
+    },
+    "password_reset_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "app_usage_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "deposit_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "wealth_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loan_condition_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "quota_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "statement_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "sms_notice_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "security_tips": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "service_channel_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_balance": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_recent_transactions": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_deposit_holding": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_quota_value": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "find_branch": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "calc_deposit_interest": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "transfer_out": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "wealth_purchase": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.4
+    },
+    "loan_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "card_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "account_open": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "loss_report_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "password_change_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complaint_feedback": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complex_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "out_of_scope": {
+      "n": 26,
+      "weight": 0.1477,
+      "local_rate": 1.0
+    }
+  },
+  "qwen3-4b-q8": {
+    "fee_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "exchange_rate_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "branch_hours": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loss_report_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.8
+    },
+    "password_reset_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "app_usage_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "deposit_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "wealth_product_intro": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "loan_condition_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "quota_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "statement_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "sms_notice_guide": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "security_tips": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "service_channel_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_balance": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_recent_transactions": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_deposit_holding": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "query_quota_value": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "find_branch": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "calc_deposit_interest": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 1.0
+    },
+    "transfer_out": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "wealth_purchase": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.2
+    },
+    "loan_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "card_apply": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "account_open": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "loss_report_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "password_change_execute": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complaint_feedback": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "complex_consult": {
+      "n": 5,
+      "weight": 0.0284,
+      "local_rate": 0.0
+    },
+    "out_of_scope": {
+      "n": 26,
+      "weight": 0.1477,
+      "local_rate": 1.0
+    }
+  }
+}

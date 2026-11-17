@@ -1,0 +1,9 @@
+{
+  "proxy": "intent 测试集类别占比（n=176）代替真实业务流量分布",
+  "local_definition": "registry route=faq/tool 为本地闭环；route=cloud 为转人工",
+  "limits": [
+    "未使用真实流量分布",
+    "不可宣称 97.8% 承接率已按流量验证",
+    "仅作方法论演示与模型间相对比较"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "model": "qwen3-1.7b-q8",
+  "seconds": 46.1,
+  "requests": 9,
+  "cpu_seconds": 366.0,
+  "logical_cores": "16",
+  "avg_cpu_pct_per_core": 49.6,
+  "note": "PC 进程 CPU 时间，非手机电池 mAh；不可换算续航"
+}

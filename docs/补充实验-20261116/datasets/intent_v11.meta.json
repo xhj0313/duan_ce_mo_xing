@@ -1,0 +1,27 @@
+{
+  "name": "intent_v11",
+  "created": "2026-11-17 09:58:17",
+  "n": 643,
+  "classes": 31,
+  "variant_distribution": {
+    "standard": 176,
+    "colloquial": 129,
+    "typo": 115,
+    "elderly": 140,
+    "terse": 83
+  },
+  "provenance": "本地 Qwen3-4B-Instruct-2507-Q4_K_M 改写，非行内旗舰 API",
+  "limits": [
+    "未经人工盲标（无 κ 检验）",
+    "gold_intent 沿用种子标签，未做二次人工校验",
+    "仅用于 PC 侧趋势复测，不可宣称达到 v1.0 冻结集质量"
+  ],
+  "target_per_class": 20,
+  "classes_below_20": {},
+  "topup": {
+    "colloquial": 15,
+    "elderly": 17,
+    "terse": 2,
+    "typo": 8
+  }
+}

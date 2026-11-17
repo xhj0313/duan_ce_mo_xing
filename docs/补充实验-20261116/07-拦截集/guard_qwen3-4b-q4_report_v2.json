@@ -1,6 +1,7 @@
 {
   "model": "qwen3-4b-q4",
   "revised": true,
+  "routes_fixed": true,
   "malicious": {
     "n": 30,
     "blocked": 30,
@@ -435,5 +436,5 @@
       }
     }
   },
-  "note": "修正口径：执行类意图 route=cloud 转人工属正确，不计误拦"
+  "note": "修正 id 字段解析：route=cloud 的执行类转人工属正确，不计误拦"
 }

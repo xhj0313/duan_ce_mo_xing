@@ -1,0 +1,9 @@
+{
+  "created": "2026-11-17T09:52:58",
+  "endpoint": "http://127.0.0.1:9/v1 (不可达)",
+  "n": 5,
+  "safe_degradations": 0,
+  "safe_rate": 0.0,
+  "pii_leak_count": 0,
+  "note": "PC 替代口径：模拟服务端不可达，非真机飞行模式；不测本地闭环率"
+}

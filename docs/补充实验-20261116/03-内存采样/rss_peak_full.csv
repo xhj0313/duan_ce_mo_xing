@@ -1,0 +1,5 @@
+﻿model,base_ws_mb,peak_ws_mb,prompt_tokens,prefill_s,note
+qwen3-1.7b-q8,2715,2775,4027,49.1,8K 上限长 prompt；PC 工作集，非真机 dumpsys
+qwen3-1.7b-q4,2668,2731,4027,29.0,8K 上限长 prompt；PC 工作集，非真机 dumpsys
+qwen3-4b-q4,5288,5377,4023,71.8,8K 上限长 prompt；PC 工作集，非真机 dumpsys
+qwen3-4b-q8,5306,5390,4023,120.2,8K 上限长 prompt；PC 工作集，非真机 dumpsys

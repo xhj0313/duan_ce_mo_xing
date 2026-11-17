@@ -1,0 +1,5 @@
+﻿model,weighted_local_rate,unweighted
+qwen3-1.7b-q8,0.7784,0.7484
+qwen3-1.7b-q4,0.7614,0.7342
+qwen3-4b-q4,0.7557,0.7226
+qwen3-4b-q8,0.7443,0.7097

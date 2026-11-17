@@ -31,16 +31,19 @@ DS = HARNESS / "eval" / "datasets" / "tool_guard.jsonl"
 
 def load_routes() -> dict[str, str]:
     """从 registry/intents.yaml 读取 intent -> route 映射。"""
+    import re
     text = (HARNESS / "registry" / "intents.yaml").read_text(encoding="utf-8")
     routes: dict[str, str] = {}
-    name = None
+    cur = None
     for line in text.splitlines():
-        st = line.strip()
-        if st.startswith("name:"):
-            name = st.split(":", 1)[1].strip().strip('"\'')
-        elif st.startswith("route:") and name:
-            routes[name] = st.split(":", 1)[1].strip()
-            name = None
+        m = re.match(r"^\s*-?\s*id:\s*([A-Za-z0-9_]+)", line)
+        if m:
+            cur = m.group(1)
+            continue
+        m = re.match(r"^\s*route:\s*([a-z_]+)", line)
+        if m and cur:
+            routes[cur] = m.group(1)
+            cur = None
     return routes
 
 

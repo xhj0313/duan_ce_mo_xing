@@ -84,9 +84,10 @@ def main() -> None:
     ap.add_argument("--endpoint", default="http://127.0.0.1:8080/v1")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--include-dev", action="store_true")
+    ap.add_argument("--dataset", default=None, help="覆盖默认数据集路径（用于增广集/变体集复测）")
     a = ap.parse_args()
 
-    ds = DATASETS / f"{a.subset}.jsonl"
+    ds = Path(a.dataset) if a.dataset else DATASETS / f"{a.subset}.jsonl"
     if not ds.exists():
         sys.exit(f"dataset missing: {ds}（先运行 build/build_*.py）")
 
