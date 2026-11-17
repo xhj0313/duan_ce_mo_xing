@@ -169,7 +169,7 @@ def extra_sections() -> list[str]:
                 f"变体分布 {d['variant_distribution']}",
                 f"- 来源：{d['provenance']}；{d['limits'][0]}", ""]
         rows = []
-        for m in ["qwen3-4b-q4", "qwen3-1.7b-q8"]:
+        for m in ["qwen3-4b-q8", "qwen3-4b-q4", "qwen3-1.7b-q4", "qwen3-1.7b-q8"]:
             dirs = sorted(REPORTS.glob(f"20261117_*{m}_intent_*"))
             if not dirs:
                 continue
@@ -177,11 +177,12 @@ def extra_sections() -> list[str]:
             rows.append([m, f"{dirs[-1].name}", fmt(rep.get("accuracy")), fmt(rep.get("macro_f1"))])
         if rows:
             out += [md_table(["模型", "run", "accuracy", "macro-F1"], rows), ""]
-            out += ["> 原测试集 4B-Q4 准确率 0.9148，增广集掉到 0.7418（-17.3pt）；"
-                    "说明原集每类 5 条过简，F1 贴线判定不可靠。", ""]
+            out += ["> 原测试集→增广集，四个模型一致下降 17–18pt："
+                    "4B-Q8 0.921→0.748、4B-Q4 0.915→0.742、1.7B-Q4 0.898→0.715、1.7B-Q8 0.881→0.705。"
+                    "原集每类 5 条过简，F1 贴线判定不可靠。", ""]
         # 按变体
         rows2 = []
-        for m in ["qwen3-4b-q4", "qwen3-1.7b-q8"]:
+        for m in ["qwen3-4b-q8", "qwen3-4b-q4", "qwen3-1.7b-q4", "qwen3-1.7b-q8"]:
             dirs = sorted(REPORTS.glob(f"20261117_*{m}_intent_*"))
             if not dirs:
                 continue
@@ -262,6 +263,17 @@ def extra_sections() -> list[str]:
                          [[r["model"], r["seconds"], r["requests"], r["cpu_seconds"],
                            r["avg_cpu_pct_per_core"]] for r in read_csv(p)]),
                 "> PC 进程 CPU 时间，不能换算为手机电池 mAh 或续航。", ""]
+
+    # #19 FAQ 短路核查
+    p = BASE / "13-FAQ短路核查" / "shortcut_audit.json"
+    if p.exists():
+        d = json.loads(p.read_text(encoding="utf-8"))
+        out += ["## 19. FAQ 短路核查（纠错）", "",
+                f"- **{d['核查结论']}**",
+                f"- 证据：{d['证据']['说明']}",
+                f"- 调用分布：{d['证据']['调用次数分布']}；短路率 {d['证据']['短路率']}，重试率 {d['证据']['重试率']}",
+                f"- {d['与历史对比']}",
+                f"- 方法：{d['方法']}", ""]
     return out
 
 def main() -> None:
@@ -317,6 +329,8 @@ def main() -> None:
              "6. **原测试集过简**：扩充到每类≥20 后 4B-Q4 准确率从 0.915 掉到 0.742，"
              "错字/拼音 49.6%、极简指代 36.1%，原 F1 贴线判定不可靠；",
              "7. **断网无降级话术**：服务端不可达时 5/5 直接异常，未给兜底回复。",
+             "8. **FAQ 短路核查**：此前『0 触发/61% 重试』系误判——短路前本就有 mask+intent 两次调用；"
+             "实测短路 35/91=38.5%、重试仅 4/91=4.4%，与 11-06 的 33% 一致（§19）。",
              ] + extra_sections()
     out.write_text("\n".join(lines), encoding="utf-8")
     print(f"写出 {out}（{len(lines)} 行）")
