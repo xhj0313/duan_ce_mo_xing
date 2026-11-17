@@ -1,0 +1,10 @@
+{
+  "device": "一加 Ace 2 (PHK110, Snapdragon 8+ Gen1, 16GB, Android 16)",
+  "model": "Qwen3-1.7B-Q8_0",
+  "n_ctx": 8192,
+  "total_slots": 1,
+  "threads": 6,
+  "fa": "on",
+  "endpoint": "http://192.168.100.185:8081/v1",
+  "note": "--parallel 1 硬约束已满足；中途两次因 Android 回收进程中断，已用 seq 续跑补齐"
+}

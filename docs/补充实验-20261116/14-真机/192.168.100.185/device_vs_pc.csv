@@ -1,0 +1,5 @@
+﻿subset,device_decode_tps,pc_decode_tps,ratio,device_wall_ms,pc_wall_ms
+intent,8.63,14.9,0.58,2446,1452
+faq,9.87,18.1,0.55,4802,1407
+mask,10.42,18.4,0.57,17272,4829
+tool,9.85,18.4,0.54,5723,1728

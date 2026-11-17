@@ -1,0 +1,5 @@
+﻿subset,n_rows,n_calls,decode_tps_median,wall_ms_median,wall_ms_p90,cold_prefill_ms,cold_prefill_tps
+intent,176,176,8.63,2446,2880,19835,81.7
+faq,91,245,9.87,4802,11360,19103,84.9
+mask,160,160,10.42,17272,32315,,
+tool,30,93,9.85,5723,8980,,

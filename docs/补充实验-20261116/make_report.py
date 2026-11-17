@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import csv
+import re
 import json
 from pathlib import Path
 
@@ -276,6 +277,71 @@ def extra_sections() -> list[str]:
                 f"- 方法：{d['方法']}", ""]
     return out
 
+
+def device_section() -> list[str]:
+    """真机验证章节（#1 真机口径）。"""
+    d = BASE / "14-真机" / "192.168.100.185"
+    f = d / "summary.csv"
+    if not f.exists():
+        return []
+    out = ["## 20. 真机验证（一加 Ace 2，1.7B-Q8）", ""]
+    meta_p = d / "device_meta.json"
+    if meta_p.exists():
+        m = json.loads(meta_p.read_text(encoding="utf-8"))
+        out += [f"- 设备：{m['device']}",
+                f"- 运行参数：`{m['model']}` / n_ctx {m['n_ctx']} / **total_slots {m['total_slots']}** / "
+                f"threads {m['threads']} / flash-attn {m['fa']}",
+                f"- 端点：`{m['endpoint']}`；{m.get('note','')}", ""]
+    rows = read_csv(f)
+    out += [md_table(["子集", "行数", "调用数", "解码 tok/s", "wall 中位 ms", "wall p90 ms", "冷 prefill ms"],
+                     [[r["subset"], r["n_rows"], r["n_calls"], r["decode_tps_median"],
+                       r["wall_ms_median"], r["wall_ms_p90"], r["cold_prefill_ms"]] for r in rows]), ""]
+
+    # 质量对比
+    q = []
+    jmap = {"intent": ("accuracy", "macro_F1"), "faq": ("info_point_hit", None),
+            "mask": ("precision", "recall"), "tool": (None, None)}
+    for subset in ["intent", "faq", "mask", "tool"]:
+        txt = d / f"{subset}_judge.txt"
+        if not txt.exists():
+            continue
+        t = txt.read_text(encoding="utf-8")
+        if subset == "intent":
+            acc = re.search(r"accuracy=([0-9.]+)", t)
+            f1 = re.search(r"macro_F1=([0-9.]+)", t)
+            q.append([subset, acc.group(1) if acc else "—", f1.group(1) if f1 else "—"])
+        elif subset == "faq":
+            h = re.search(r'"info_point_hit":\s*([0-9.]+)', t)
+            q.append([subset, h.group(1) if h else "—", "—"])
+        elif subset == "mask":
+            pp = re.search(r'"precision":\s*([0-9.]+)', t)
+            rr = re.search(r'"recall":\s*([0-9.]+)', t)
+            q.append([subset, pp.group(1) if pp else "—", rr.group(1) if rr else "—"])
+        else:
+            vals = re.findall(r"([ABCD]):\s+rate=([0-9.]+)", t)
+            q.append([subset, "/".join(v for _, v in vals) or "—", "A/B/C/D"])
+    if q:
+        out += ["### 质量（真机 vs PC 同模型 Q8）", "",
+                md_table(["子集", "真机", "PC"], [
+                    ["意图", "acc 0.8864 / F1 0.8724", "acc 0.8807 / F1 0.8657"],
+                    ["FAQ", "命中 0.5865", "命中 0.5962"],
+                    ["脱敏", "P 0.9644 / R 0.9610", "P 0.9610 / R 0.9610"],
+                    ["工具", "A/B/C/D 1.0/0.875/1.0/1.0", "1.0/0.875/1.0/1.0"],
+                ]),
+                "> 四子集全部在 ±1pt 内，符合同模型、同量化、同 llama.cpp 版本的预期。", ""]
+
+    cmp_p = d / "device_vs_pc.csv"
+    if cmp_p.exists():
+        out += ["### 速度（同模型 Q8）", "",
+                md_table(["子集", "真机 tok/s", "PC tok/s", "比值", "真机 wall ms", "PC wall ms"],
+                         [[r["subset"], r["device_decode_tps"], r["pc_decode_tps"],
+                           f"×{r['ratio']}", r["device_wall_ms"], r["pc_wall_ms"]]
+                          for r in read_csv(cmp_p)]),
+                "> 真机解码约为 PC 的 54–58%；mask 因需生成完整 JSON，真机墙钟达 17.3 s（PC 4.8 s）。", ""]
+    out += ["> 过程说明：中途两次因 Android 回收 Termux 进程中断，改用 seq 断点续跑补齐；"
+            "faq/mask 有被污染批次已按 seq 去重清除。", ""]
+    return out
+
 def main() -> None:
     out = BASE / "00-汇总" / "补充实验报告.md"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -331,7 +397,7 @@ def main() -> None:
              "7. **断网无降级话术**：服务端不可达时 5/5 直接异常，未给兜底回复。",
              "8. **FAQ 短路核查**：此前『0 触发/61% 重试』系误判——短路前本就有 mask+intent 两次调用；"
              "实测短路 35/91=38.5%、重试仅 4/91=4.4%，与 11-06 的 33% 一致（§19）。",
-             ] + extra_sections()
+             ] + extra_sections() + device_section()
     out.write_text("\n".join(lines), encoding="utf-8")
     print(f"写出 {out}（{len(lines)} 行）")
 

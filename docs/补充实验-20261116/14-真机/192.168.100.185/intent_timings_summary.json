@@ -1,0 +1,25 @@
+{
+  "device": "一加 Ace 2 (PHK110, Snapdragon 8+ Gen1, 16GB, Android 16)",
+  "model": "Qwen3-1.7B-Q8_0",
+  "n_ctx": 8192,
+  "total_slots": 1,
+  "threads": 6,
+  "fa": "on",
+  "run": "20261117_123659_device-1.7b-q8_intent_mid_openai",
+  "subset": "intent",
+  "n": 176,
+  "accuracy": 0.8864,
+  "macro_f1": 0.8724,
+  "cold": {
+    "prompt_n": 1621,
+    "prompt_ms": 19835,
+    "prefill_tps": 81.7
+  },
+  "warm": {
+    "n": 175,
+    "decode_tps_median": 8.63,
+    "wall_ms_median": 2446,
+    "wall_ms_p90": 2880
+  },
+  "note": "真机实测；faq/mask/tool 因设备掉线未完成"
+}
