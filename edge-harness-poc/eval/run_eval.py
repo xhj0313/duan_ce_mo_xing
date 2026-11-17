@@ -85,6 +85,8 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--include-dev", action="store_true")
     ap.add_argument("--dataset", default=None, help="覆盖默认数据集路径（用于增广集/变体集复测）")
+    ap.add_argument("--offset", type=int, default=0, help="跳过前 N 条（断点续跑）")
+    ap.add_argument("--resume-run", default=None, help="续跑到已有 run 目录（追加 raw.jsonl）")
     a = ap.parse_args()
 
     ds = Path(a.dataset) if a.dataset else DATASETS / f"{a.subset}.jsonl"
@@ -94,18 +96,44 @@ def main() -> None:
     adapter = make_adapter(a.backend, a.model, a.device, a.endpoint)
     h = Harness(adapter)
 
-    ts = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_id = f"{ts}_{a.model}_{a.subset}_{a.device}_{a.backend}"
-    out_dir = REPORTS / run_id
-    out_dir.mkdir(parents=True, exist_ok=True)
+    if a.resume_run:
+        run_id = a.resume_run
+        out_dir = REPORTS / run_id
+        if not out_dir.exists():
+            sys.exit(f"续跑目标不存在: {out_dir}")
+    else:
+        ts = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_id = f"{ts}_{a.model}_{a.subset}_{a.device}_{a.backend}"
+        out_dir = REPORTS / run_id
+        out_dir.mkdir(parents=True, exist_ok=True)
 
     n, n_err = 0, 0
-    with ds.open(encoding="utf-8") as f, (out_dir / "raw.jsonl").open("w", encoding="utf-8") as out:
+    skipped = 0
+    done_seq: set[int] = set()
+    if a.resume_run and (out_dir / "raw.jsonl").exists():
+        for line in (out_dir / "raw.jsonl").open(encoding="utf-8"):
+            if not line.strip():
+                continue
+            try:
+                rr = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if "__error__" not in (rr.get("output") or {}) and rr.get("seq") is not None:
+                done_seq.add(rr["seq"])
+    mode = "a" if a.resume_run else "w"
+    with ds.open(encoding="utf-8") as f, (out_dir / "raw.jsonl").open(mode, encoding="utf-8") as out:
+        seq = -1
         for line in f:
             if a.limit and n >= a.limit:
                 break
             rec = json.loads(line)
             if rec.get("split") == "dev" and not a.include_dev:
+                continue
+            seq += 1
+            if skipped < a.offset:
+                skipped += 1
+                continue
+            if seq in done_seq:
                 continue
             n_calls0 = len(getattr(getattr(h, "adapter", None), "calls", []) or [])
             try:
@@ -125,7 +153,7 @@ def main() -> None:
                     n_err += 1
                     output = {"__error__": f"{type(e).__name__}: {e}"}
             all_calls = getattr(getattr(h, "adapter", None), "calls", []) or []
-            out.write(json.dumps({"id": rec["id"], "text": rec["text"],
+            out.write(json.dumps({"seq": seq, "id": rec["id"], "text": rec["text"],
                                   "meta": rec.get("meta", {}),
                                   "output": output,
                                   "calls": all_calls[n_calls0:]}, ensure_ascii=False) + "\n")
@@ -133,10 +161,16 @@ def main() -> None:
             if n % 50 == 0:
                 print(f"... {n}", file=sys.stderr)
 
+    prev_n = 0
+    if a.resume_run:
+        try:
+            prev_n = json.loads((out_dir / "run.json").read_text(encoding="utf-8")).get("n", 0)
+        except Exception:  # noqa: BLE001
+            prev_n = 0
     meta = {"run_id": run_id, "subset": a.subset, "backend": a.backend,
             "model": a.model, "device": a.device,
             "endpoint": a.endpoint if a.backend == "openai" else None,
-            "n": n, "n_error": n_err,
+            "n": prev_n + n, "n_error": n_err, "resumed": bool(a.resume_run),
             "created": dt.datetime.now().isoformat(timespec="seconds"),
             "note": "dry 后端数字仅验证管线，不代表模型能力"}
     (out_dir / "run.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2),
