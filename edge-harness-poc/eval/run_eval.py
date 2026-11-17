@@ -106,6 +106,7 @@ def main() -> None:
             rec = json.loads(line)
             if rec.get("split") == "dev" and not a.include_dev:
                 continue
+            n_calls0 = len(getattr(getattr(h, "adapter", None), "calls", []) or [])
             try:
                 output = DRIVERS[a.subset](h, rec)
             except Exception as e:                    # 单条异常不中断整批
@@ -122,9 +123,11 @@ def main() -> None:
                 if not ok:
                     n_err += 1
                     output = {"__error__": f"{type(e).__name__}: {e}"}
+            all_calls = getattr(getattr(h, "adapter", None), "calls", []) or []
             out.write(json.dumps({"id": rec["id"], "text": rec["text"],
                                   "meta": rec.get("meta", {}),
-                                  "output": output}, ensure_ascii=False) + "\n")
+                                  "output": output,
+                                  "calls": all_calls[n_calls0:]}, ensure_ascii=False) + "\n")
             n += 1
             if n % 50 == 0:
                 print(f"... {n}", file=sys.stderr)

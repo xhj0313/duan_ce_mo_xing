@@ -1,0 +1,68 @@
+{
+  "runs_audited": 9,
+  "rows_total": 1293,
+  "residual_entities": 492,
+  "rows_with_residual_pii": 302,
+  "residual_pii_rate": 0.2336,
+  "method": "按金标 meta.entities.original 精确比对，非正则匹配（避免干扰项误判）",
+  "avg_byte_ratio": 0.8655,
+  "by_entity_type": {
+    "ADDR": {
+      "entities": 414,
+      "leaked": 132,
+      "leak_rate": 0.3188
+    },
+    "BANK_CARD": {
+      "entities": 412,
+      "leaked": 55,
+      "leak_rate": 0.1335
+    },
+    "ID_CARD": {
+      "entities": 525,
+      "leaked": 90,
+      "leak_rate": 0.1714
+    },
+    "NAME": {
+      "entities": 476,
+      "leaked": 153,
+      "leak_rate": 0.3214
+    },
+    "PHONE": {
+      "entities": 454,
+      "leaked": 62,
+      "leak_rate": 0.1366
+    }
+  },
+  "by_entity_type_latest": {
+    "ADDR": {
+      "entities": 102,
+      "leaked": 11,
+      "leak_rate": 0.1078
+    },
+    "BANK_CARD": {
+      "entities": 102,
+      "leaked": 0,
+      "leak_rate": 0.0
+    },
+    "ID_CARD": {
+      "entities": 130,
+      "leaked": 0,
+      "leak_rate": 0.0
+    },
+    "NAME": {
+      "entities": 118,
+      "leaked": 10,
+      "leak_rate": 0.0847
+    },
+    "PHONE": {
+      "entities": 112,
+      "leaked": 0,
+      "leak_rate": 0.0
+    }
+  },
+  "latest_runs": {
+    "qwen3-1.7b": "20261111_153626_qwen3-1.7b_mask_mid_openai",
+    "qwen3-4b2507": "20261104_183151_qwen3-4b2507_mask_mid_openai"
+  },
+  "note": "sent_bytes 为脱敏后文本字节数；leak_* 为脱敏后文本中残留的 PII 计数"
+}

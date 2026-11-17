@@ -1,0 +1,5 @@
+﻿model,variant,n,accuracy
+qwen3-1.7b-q8,standard,31,0.9355
+qwen3-1.7b-q8,colloquial,85,0.9059
+qwen3-1.7b-q8,elderly,20,0.85
+qwen3-1.7b-q8,terse,40,0.8

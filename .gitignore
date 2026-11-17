@@ -19,3 +19,6 @@ edge-harness-poc/eval/datasets.zip
 .idea/
 .DS_Store
 Thumbs.db
+
+# 服务运行日志
+*.log

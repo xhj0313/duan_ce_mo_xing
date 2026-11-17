@@ -33,6 +33,8 @@ class OpenAIAdapter:
         self.temperature = temperature
         self.max_context_keep = max_context_keep
         self.timeout_s = timeout_s
+        # 逐次调用记录：每次模型请求的 token 级耗时（llama-server 的 timings 字段）
+        self.calls: list[dict] = []
 
     def chat(self, messages: list[dict], max_tokens: int = 512,
              json_mode: bool = False) -> tuple[str, Timings]:
@@ -49,6 +51,20 @@ class OpenAIAdapter:
             body = json.loads(r.read().decode("utf-8"))
         t.t_device_start = t.t_device_end = time.time()  # HTTP 场景网络耗时极小，
         t.t_return = time.time()                          # 计时以 wall 口径为准并注明
+
+        # 保留服务端 token 级指标（llama-server 扩展字段；OpenAI 兼容服务无此字段则为空）
+        raw = body.get("timings") or {}
+        t.raw_fields = {"timings": raw, "usage": body.get("usage") or {}}
+        self.calls.append({
+            "wall_ms": round((t.t_return - t.t_submit) * 1000, 1),
+            "prompt_n": raw.get("prompt_n"),
+            "prompt_ms": raw.get("prompt_ms"),
+            "prompt_per_second": raw.get("prompt_per_second"),
+            "predicted_n": raw.get("predicted_n"),
+            "predicted_ms": raw.get("predicted_ms"),
+            "predicted_per_second": raw.get("predicted_per_second"),
+            "max_tokens": max_tokens,
+        })
         return body["choices"][0]["message"]["content"] or "", t
 
     # ---- 与 MNNAdapter 同形接口：prompt 进、文本出（单轮、无历史）----
